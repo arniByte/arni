@@ -14,9 +14,13 @@ import { getLang, t } from './i18n';
 
 const LS = { pid: 'kao.playerId', handle: 'kao.handle', code: 'kao.code' } as const;
 
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({
-  autoConnect: true,
-});
+// Same-origin by default (single-host deploy). For a split deploy (e.g. the
+// static client on Vercel + the realtime server on Render), set VITE_SERVER_URL
+// at build time to the server's public URL.
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = SERVER_URL
+  ? io(SERVER_URL, { autoConnect: true })
+  : io({ autoConnect: true });
 
 let lastCode: string | null = localStorage.getItem(LS.code);
 
