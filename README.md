@@ -54,16 +54,30 @@ Then open <http://localhost:3000>.
 
 ---
 
-## Deploy (any single Node host: Render / Railway / Fly / VPS)
+## Deploy (persistent Node host: Render / Railway / Fly)
 
-The whole game is one deployable service.
+The whole game is one deployable service. It needs a host that keeps a **process alive** and allows **WebSocket** connections (the server holds live sockets, in-memory rooms, and the authoritative round timers). Render, Railway, and Fly all do. **Vercel/Netlify serverless does _not_** — they can't keep WebSockets open or share in-memory state between invocations, so the realtime backend can't run there.
 
-1. **Build command:** `npm install && npm run build`
-2. **Start command:** `npm start`
-3. **Env:** set `PORT` (most platforms inject it automatically) and optionally `PUBLIC_URL` to your public origin so recap cards link back correctly.
-4. Ensure the platform allows **WebSocket** connections (Render/Railway/Fly all do by default).
+### Render (one click)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/arniByte/arni)
+
+This repo ships a [`render.yaml`](./render.yaml) blueprint. Click the button (or **New + → Blueprint** in the dashboard and pick this repo). Render runs `npm install --include=dev && npm run build`, then `npm start`, injects `$PORT`, and health-checks `/healthz`. You'll get a public `https://<name>.onrender.com` URL playable on any device.
+
+> Render's **free** web service spins down after ~15 min idle, so the first visitor after a quiet spell waits ~30s for a cold start. Any paid plan stays warm.
+
+### Railway / Fly / any Docker host
+
+This repo ships a [`Dockerfile`](./Dockerfile). On **Railway**: New Project → Deploy from GitHub repo → it auto-detects the Dockerfile and injects `$PORT`. On **Fly**: `fly launch` (uses the Dockerfile). Railway doesn't spin down.
+
+### Config
+
+- `PORT` — injected by the platform; the server reads it.
+- `PUBLIC_URL` _(optional)_ — your public origin for recap join links. If unset, the client composes the link from `window.location.origin`, so it works regardless.
 
 No database, no external services. Rooms live in memory and are cleaned up when empty, so a restart simply clears active rooms.
+
+> **Why not Vercel?** KAO's backend is a stateful realtime server. Vercel serverless functions are stateless and short-lived and can't hold WebSocket connections — so multiplayer would be dead there. Use a persistent host (above), or split it (Vercel for the static client + a persistent host for the server, with CORS + a configured server URL).
 
 ---
 
