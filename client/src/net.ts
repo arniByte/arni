@@ -168,6 +168,12 @@ socket.on('vote:mine', (p) => {
   setState({ myFaceId: p.faceId });
 });
 
+// Reconnect during BUILD: round:start (above) just cleared our per-round flags;
+// this restores the face we had already locked in so we don't rebuild/resubmit.
+socket.on('face:mine', (p) => {
+  setState({ mySubmitted: true, mySubmittedGlyphs: p.glyphs });
+});
+
 socket.on('round:result', (p) => {
   setState({ result: p, screen: 'RESULT' });
 });

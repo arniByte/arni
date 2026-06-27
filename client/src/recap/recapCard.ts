@@ -3,7 +3,7 @@
 import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import { el } from '../dom';
-import { BRAND, type RecapPayload } from '../../../shared/protocol';
+import { BRAND, LIMITS, type RecapPayload } from '../../../shared/protocol';
 
 const C = {
   paper: '#0B0D14',
@@ -36,7 +36,9 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
     color: { dark: '#EAEAE7', light: '#0B0D14' },
   });
 
-  const rows = recap.rows.slice(0, 6);
+  // Render every round (bounded by the max round count) so the PNG matches the
+  // on-screen preview — the space-evenly layout fits up to 8 rows in 900px.
+  const rows = recap.rows.slice(0, LIMITS.MAX_ROUNDS);
 
   const card = el('div', {
     style: {

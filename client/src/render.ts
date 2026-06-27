@@ -22,8 +22,9 @@ const screens: Record<Screen, () => HTMLElement> = {
 function viewKey(s: AppState): string {
   switch (s.screen) {
     case 'BUILD':
-      // Rebuild only on a new round — preserves the face builder's local state.
-      return `BUILD|${s.round?.index ?? 0}`;
+      // Rebuild on a new round, or when our submitted-state flips (submit /
+      // reconnect-restore) — both preserve the face builder's local state otherwise.
+      return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}`;
     case 'VOTE':
       return `VOTE|${s.round?.index ?? 0}|${s.myFaceId ?? ''}|${s.myVotedFaceId ?? ''}`;
     default: {
@@ -42,6 +43,7 @@ function viewKey(s: AppState): string {
 // ── toast (used for both errors and small notices) ────────────────────────────
 let toastEl: HTMLElement | null = null;
 let toastTimer: number | undefined;
+let shownToast: string | null = null;
 
 function syncToast(): void {
   if (state.error) {
@@ -49,12 +51,18 @@ function syncToast(): void {
       toastEl = el('div', { class: 'toast' });
       document.body.appendChild(toastEl);
     }
-    toastEl.textContent = state.error;
-    toastEl.style.display = 'block';
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => setState({ error: null }), 2600);
+    // Only (re)arm dismissal when the message actually changes, so unrelated
+    // state updates can't keep an old toast on screen forever.
+    if (state.error !== shownToast) {
+      shownToast = state.error;
+      toastEl.textContent = state.error;
+      toastEl.style.display = 'block';
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => setState({ error: null }), 2600);
+    }
   } else if (toastEl) {
     toastEl.style.display = 'none';
+    shownToast = null;
   }
 }
 

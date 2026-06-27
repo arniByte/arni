@@ -33,6 +33,18 @@ import {
   snapshotTo,
   clearRoomTimers,
 } from './game';
+import { normalizeCode } from './validate';
+
+// Nothing from the client is trusted: coerce any payload to a plain object so a
+// null / non-object payload can never throw out of a socket listener.
+function asObject(p: unknown): Record<string, unknown> {
+  return p && typeof p === 'object' ? (p as Record<string, unknown>) : {};
+}
+
+// Last-resort safety net: a stray throw in a handler must never kill the process
+// and drop every room. Log and keep serving.
+process.on('uncaughtException', (e) => console.error('[uncaughtException]', e));
+process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', e));
 
 interface SocketData {
   playerId?: string;
@@ -81,15 +93,24 @@ function bindSocketToRoom(socket: { data: SocketData; join: (r: string) => void 
 
 io.on('connection', (socket) => {
   // ── create ────────────────────────────────────────────────────────────────
-  socket.on('room:create', ({ handle, settings }, ack) => {
-    const { room, player } = createRoom(handle, socket.id, settings);
+  socket.on('room:create', (p, ack) => {
+    const o = asObject(p);
+    const { room, player } = createRoom(
+      typeof o.handle === 'string' ? o.handle : '',
+      socket.id,
+      o.settings as Parameters<typeof createRoom>[2],
+    );
     bindSocketToRoom(socket, room, player.id);
     ack?.({ ok: true, code: room.code, playerId: player.id });
     io.to(room.code).emit('room:state', publicState(room));
   });
 
   // ── join / reconnect ────────────────────────────────────────────────────────
-  socket.on('room:join', ({ code, handle, playerId }, ack) => {
+  socket.on('room:join', (p, ack) => {
+    const o = asObject(p);
+    const code = normalizeCode(o.code);
+    const handle = typeof o.handle === 'string' ? o.handle : '';
+    const playerId = typeof o.playerId === 'string' ? o.playerId : undefined;
     const room = getRoom(code);
     if (!room) {
       ack?.({ ok: false, error: errFor(ERR.ROOM_NOT_FOUND) });
@@ -143,17 +164,21 @@ io.on('connection', (socket) => {
   });
 
   // ── submit face ─────────────────────────────────────────────────────────────
-  socket.on('face:submit', ({ glyphs }) => {
+  socket.on('face:submit', (p) => {
     const room = currentRoom(socket.data);
     if (!room || !socket.data.playerId) return;
-    const err = handleSubmit(io, room, socket.data.playerId, glyphs);
+    const glyphs = asObject(p).glyphs;
+    // validFace rejects non-strings, so passing through is safe.
+    const err = handleSubmit(io, room, socket.data.playerId, glyphs as string);
     if (err === 'BAD_FACE') socket.emit('error', errFor(ERR.BAD_FACE));
   });
 
   // ── cast vote ─────────────────────────────────────────────────────────────────
-  socket.on('vote:cast', ({ faceId }) => {
+  socket.on('vote:cast', (p) => {
     const room = currentRoom(socket.data);
     if (!room || !socket.data.playerId) return;
+    const faceId = asObject(p).faceId;
+    if (typeof faceId !== 'string') return;
     handleVote(io, room, socket.data.playerId, faceId);
   });
 
@@ -169,6 +194,9 @@ io.on('connection', (socket) => {
     if (!room || !socket.data.playerId) return;
     const player = room.players.get(socket.data.playerId);
     if (!player) return;
+    // Ignore a stale socket whose player already reconnected on a newer socket —
+    // otherwise an old socket's late close would tear down a live player.
+    if (player.socketId !== socket.id) return;
     player.connected = false;
     player.socketId = null;
     io.to(room.code).emit('room:state', publicState(room));

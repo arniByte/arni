@@ -262,7 +262,7 @@ function finishRound(io: IO, room: Room): void {
 
   // Record the round winner for the recap (skip if nobody voted at all).
   const winner = ranked[0];
-  if (winner) {
+  if (winner && winner.votes > 0) {
     room.recapRounds.push({
       situation: room.situation,
       glyphs: winner.glyphs,
@@ -339,14 +339,21 @@ export function getRecap(room: Room): RecapPayload {
 export function snapshotTo(io: IO, room: Room, socketId: string): void {
   const to = io.to(socketId);
   switch (room.phase) {
-    case 'BUILD':
+    case 'BUILD': {
       to.emit('round:start', {
         index: room.roundIndex + 1,
         total: room.settings.rounds,
         situation: room.situation,
         endsAt: room.endsAt,
       });
+      // If this player already locked a face this round, restore it (the
+      // round:start above reset the client's per-round flags first).
+      const mineBuild = [...room.submissions.values()].find(
+        (s) => room.players.get(s.authorId)?.socketId === socketId,
+      );
+      if (mineBuild && !mineBuild.auto) to.emit('face:mine', { glyphs: mineBuild.glyphs });
       break;
+    }
     case 'VOTE': {
       to.emit('round:vote', {
         situation: room.situation,

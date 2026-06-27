@@ -174,6 +174,8 @@ export interface ServerToClientEvents {
   'round:vote': (p: RoundVotePayload) => void;
   // Private to each author so the client can grey out their own (still-anonymous) face.
   'vote:mine': (p: { faceId: string }) => void;
+  // Private to a reconnecting author during BUILD: restores their already-locked face.
+  'face:mine': (p: { glyphs: string }) => void;
   'round:result': (p: RoundResultPayload) => void;
   'match:end': (p: MatchEndPayload) => void;
   'player:joined': (p: { player: PublicPlayer }) => void;

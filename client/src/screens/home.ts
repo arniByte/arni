@@ -10,7 +10,10 @@ let draftHandle = '';
 let draftCode = '';
 
 export function renderHome(): HTMLElement {
-  const urlCode = new URLSearchParams(location.search).get('c') ?? '';
+  const urlCode = (new URLSearchParams(location.search).get('c') ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 4);
   const handle0 = draftHandle || state.handle || storedHandle();
   const code0 = draftCode || urlCode;
 
