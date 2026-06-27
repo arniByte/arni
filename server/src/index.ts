@@ -68,7 +68,13 @@ if (existsSync(clientDist)) {
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(
   httpServer,
-  { pingInterval: 10_000, pingTimeout: 8_000 },
+  {
+    pingInterval: 10_000,
+    pingTimeout: 8_000,
+    // Allow a split deploy (client on another origin, e.g. Vercel). No cookies
+    // are used, so reflecting any origin is safe; lock it down with CORS_ORIGIN.
+    cors: { origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true },
+  },
 );
 
 const errFor = (code: string): ErrorPayload => {

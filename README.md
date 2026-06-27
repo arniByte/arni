@@ -77,7 +77,15 @@ This repo ships a [`Dockerfile`](./Dockerfile). On **Railway**: New Project → 
 
 No database, no external services. Rooms live in memory and are cleaned up when empty, so a restart simply clears active rooms.
 
-> **Why not Vercel?** KAO's backend is a stateful realtime server. Vercel serverless functions are stateless and short-lived and can't hold WebSocket connections — so multiplayer would be dead there. Use a persistent host (above), or split it (Vercel for the static client + a persistent host for the server, with CORS + a configured server URL).
+### Vercel (static client) + Render (server) — split deploy
+
+Vercel can host the **client** for free from GitHub, but **not** the realtime server (serverless can't hold WebSockets). So pair it with a server on Render/Railway:
+
+1. **Server** → deploy to Render/Railway (above). Copy its URL, e.g. `https://kao.onrender.com`.
+2. **Client on Vercel** → Import the repo (Vercel reads [`vercel.json`](./vercel.json): build `npm run build`, output `client/dist`). Add an env var **`VITE_SERVER_URL`** = your server URL, then deploy.
+3. The client connects to `VITE_SERVER_URL` when set (otherwise same-origin). The server allows cross-origin sockets by default; restrict it with `CORS_ORIGIN` (comma-separated origins) if you like.
+
+> **Why the split?** KAO's backend is a stateful realtime server. Vercel serverless functions are stateless/short-lived and can't hold WebSocket connections, so the server lives on a persistent host while Vercel just serves the static client.
 
 ---
 
