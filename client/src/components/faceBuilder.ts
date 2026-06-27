@@ -1,0 +1,193 @@
+// THE unique mechanic: a fast, tactile Unicode face constructor.
+// Three input modes (slots, free-type, presets/random) over one big live preview.
+// Letters & digits are hard-blocked so it stays pure expression.
+import { el, clear } from '../dom';
+import { facePreview } from './kaomoji';
+import {
+  EYES,
+  MOUTHS,
+  SIDES,
+  LBR,
+  RBR,
+  ARMS,
+  PRESETS,
+  assemble,
+  validFace,
+  stripBlocked,
+  randomFace,
+} from './palettes';
+
+const randInt = (n: number) => Math.floor(Math.random() * n);
+
+interface BuilderState {
+  lbr: number;
+  le: number;
+  m: number;
+  re: number;
+  rbr: number;
+  arm: number; // -1 = none
+  free: string | null; // free-type / preset override; null = use slots
+  locked: boolean;
+}
+
+/**
+ * Returns the builder node. `onSubmit` is called once with the final glyphs;
+ * after that the builder locks itself into a confirmation state.
+ */
+export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLElement {
+  const st: BuilderState = { lbr: 0, le: 1, m: 0, re: 1, rbr: 0, arm: -1, free: null, locked: false };
+
+  const preview = facePreview('');
+
+  const slotKeys: Array<{ label: string; get: () => string; cycle: () => void }> = [
+    { label: 'BRKT', get: () => LBR[st.lbr] || '·', cycle: () => bump('lbr', LBR.length) },
+    { label: 'EYE', get: () => EYES[st.le], cycle: () => bump('le', EYES.length) },
+    { label: 'MOUTH', get: () => MOUTHS[st.m], cycle: () => bump('m', MOUTHS.length) },
+    { label: 'EYE', get: () => EYES[st.re], cycle: () => bump('re', EYES.length) },
+    { label: 'BRKT', get: () => RBR[st.rbr] || '·', cycle: () => bump('rbr', RBR.length) },
+  ];
+
+  const slotBtns = slotKeys.map((s) =>
+    el('button', { class: 'slot', type: 'button', onClick: s.cycle }, s.get()),
+  );
+  const slots = el('div', { class: 'slots' }, ...slotBtns);
+  const slotLabels = el(
+    'div',
+    { class: 'slot-labels' },
+    ...slotKeys.map((s) => el('span', { class: 'label' }, s.label)),
+  );
+
+  const armChips = ARMS.map((arm, i) =>
+    el(
+      'button',
+      { class: 'chip', type: 'button', onClick: () => toggleArm(i) },
+      arm.replace(' ', '…'),
+    ),
+  );
+  const armsRow = el('div', { class: 'row wrap' }, ...armChips);
+
+  const presetChips = Object.entries(PRESETS).map(([name, glyphs]) =>
+    el('button', { class: 'chip', type: 'button', title: glyphs, onClick: () => applyPreset(glyphs) }, name),
+  );
+  const randomBtn = el(
+    'button',
+    { class: 'chip lime', type: 'button', onClick: roll },
+    '⟳ RANDOM',
+  );
+  const presetRow = el('div', { class: 'row wrap' }, ...presetChips, randomBtn);
+
+  const freeInput = el('input', {
+    class: 'pill',
+    type: 'text',
+    inputmode: 'text',
+    autocomplete: 'off',
+    autocapitalize: 'off',
+    spellcheck: false,
+    placeholder: 'or free-type symbols — no letters / digits',
+    onInput: onFreeInput,
+  }) as HTMLInputElement;
+
+  const submitBtn = el(
+    'button',
+    { class: 'btn solid block', type: 'button', onClick: submit },
+    'LOCK IN FACE ⏎',
+  );
+
+  const body = el(
+    'div',
+    { class: 'stack' },
+    el('div', { class: 'panel' }, preview),
+    el('div', { class: 'stack', style: { gap: '6px' } }, slots, slotLabels),
+    el('div', { class: 'field' }, el('span', { class: 'label' }, 'ARMS'), armsRow),
+    el('div', { class: 'field' }, el('span', { class: 'label' }, 'PRESETS'), presetRow),
+    freeInput,
+    submitBtn,
+  );
+
+  const root = el('div', { class: 'stack' }, body);
+
+  // ── state ops ───────────────────────────────────────────────────────────────
+  function bump(key: 'lbr' | 'le' | 'm' | 're' | 'rbr', len: number): void {
+    st.free = null;
+    st[key] = (st[key] + 1) % len;
+    refresh();
+  }
+
+  function toggleArm(i: number): void {
+    st.free = null;
+    st.arm = st.arm === i ? -1 : i;
+    refresh();
+  }
+
+  function applyPreset(glyphs: string): void {
+    st.free = glyphs;
+    refresh();
+  }
+
+  function roll(): void {
+    st.free = null;
+    const sideIdx = randInt(SIDES.length);
+    st.lbr = sideIdx;
+    st.rbr = sideIdx;
+    st.le = randInt(EYES.length);
+    st.m = randInt(MOUTHS.length);
+    st.re = randInt(EYES.length);
+    st.arm = Math.random() < 0.4 ? randInt(ARMS.length) : -1;
+    // Guard against any odd combo by falling back to a known-good face.
+    if (!validFace(current())) st.free = randomFace();
+    refresh();
+  }
+
+  function onFreeInput(e: Event): void {
+    const raw = (e.target as HTMLInputElement).value;
+    const cleaned = stripBlocked(raw);
+    (e.target as HTMLInputElement).value = cleaned;
+    st.free = cleaned === '' ? null : cleaned;
+    refresh();
+  }
+
+  function current(): string {
+    if (st.free != null) return st.free;
+    return assemble({
+      lbr: LBR[st.lbr],
+      le: EYES[st.le],
+      mouth: MOUTHS[st.m],
+      re: EYES[st.re],
+      rbr: RBR[st.rbr],
+      arm: st.arm >= 0 ? ARMS[st.arm] : null,
+    });
+  }
+
+  function refresh(): void {
+    preview.textContent = current() || ' ';
+    slotBtns.forEach((b, i) => (b.textContent = slotKeys[i].get()));
+    armChips.forEach((c, i) => c.classList.toggle('active', i === st.arm));
+    if (document.activeElement !== freeInput) freeInput.value = st.free ?? '';
+    submitBtn.disabled = !validFace(current());
+  }
+
+  function submit(): void {
+    if (st.locked) return;
+    const glyphs = current();
+    if (!validFace(glyphs)) return;
+    st.locked = true;
+    onSubmit(glyphs);
+    lockUI(glyphs);
+  }
+
+  function lockUI(glyphs: string): void {
+    clear(root);
+    root.appendChild(
+      el(
+        'div',
+        { class: 'stack center' },
+        el('div', { class: 'panel' }, facePreview(glyphs)),
+        el('div', { class: 'chip', style: { alignSelf: 'center' } }, '✓ LOCKED IN'),
+        el('div', { class: 'hint center' }, 'waiting for the room…'),
+      ),
+    );
+  }
+
+  refresh();
+  return root;
+}

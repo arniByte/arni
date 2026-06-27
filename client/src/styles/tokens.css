@@ -1,0 +1,94 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   KAO // 顔 — design tokens + base reset.
+   Cold "SYM名L" terminal aesthetic: near-black, monospace, calm, FUI.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* color tokens */
+  --paper: #0b0d14; /* page bg (near-black) */
+  --surface: #10131c; /* cards / inputs */
+  --surface2: #161a26; /* raised */
+  --ink: #eaeae7; /* primary text */
+  --dim: #737580; /* secondary / labels */
+  --cyan: #7fe9e0; /* primary accent (steel-cyan) */
+  --steel: #8fb7c9; /* secondary accent */
+  --lime: #d7f25a; /* HIGHLIGHT marker — use VERY sparingly, ~1 element */
+  --acc-red: #ff3b30; /* danger / timer-critical only — almost never */
+  --grid: rgba(127, 233, 224, 0.06); /* faint FUI grid lines */
+  --hairline: rgba(127, 233, 224, 0.14);
+  --hairline-dim: rgba(234, 234, 231, 0.08);
+
+  /* type */
+  --mono: ui-monospace, "Space Mono", "JetBrains Mono", "Noto Sans JP", monospace;
+  --display: "Inter", "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+
+  /* spacing / shape */
+  --r: 10px;
+  --tick: 9px; /* corner tick length */
+  --gap: 14px;
+  --maxw: 720px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background-color: var(--paper);
+  /* faint FUI grid */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: center top;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+#app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: var(--mono);
+  color: inherit;
+  cursor: pointer;
+}
+
+input,
+select {
+  font-family: var(--mono);
+}
+
+::selection {
+  background: var(--cyan);
+  color: var(--paper);
+}
+
+/* thin custom scrollbars to keep the cold look */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 8px;
+}
