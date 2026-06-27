@@ -4,18 +4,35 @@ import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import { el } from '../dom';
 import { BRAND, LIMITS, type RecapPayload } from '../../../shared/protocol';
+import { t, votesWord, getTheme } from '../i18n';
 
-const C = {
-  paper: '#0B0D14',
-  surface: '#10131C',
-  surface2: '#161A26',
-  ink: '#EAEAE7',
-  dim: '#737580',
-  cyan: '#7FE9E0',
-  steel: '#8FB7C9',
-  lime: '#D7F25A',
-  grid: 'rgba(127,233,224,0.06)',
-  hair: 'rgba(127,233,224,0.16)',
+const THEMES = {
+  dark: {
+    paper: '#0B0D14',
+    surface: '#10131C',
+    ink: '#EAEAE7',
+    dim: '#737580',
+    cyan: '#7FE9E0',
+    steel: '#8FB7C9',
+    lime: '#D7F25A',
+    grid: 'rgba(127,233,224,0.06)',
+    hair: 'rgba(127,233,224,0.16)',
+    qrDark: '#EAEAE7',
+    qrLight: '#0B0D14',
+  },
+  light: {
+    paper: '#F5F7FA',
+    surface: '#FFFFFF',
+    ink: '#1C2230',
+    dim: '#6C7484',
+    cyan: '#0E9C94',
+    steel: '#3B7C95',
+    lime: '#A9C400',
+    grid: 'rgba(28,46,72,0.05)',
+    hair: 'rgba(28,46,72,0.16)',
+    qrDark: '#1C2230',
+    qrLight: '#FFFFFF',
+  },
 };
 const MONO = "'Space Mono', ui-monospace, 'Noto Sans JP', monospace";
 const DISPLAY = "'Inter', 'Noto Sans JP', sans-serif";
@@ -29,11 +46,12 @@ export function absoluteJoinUrl(recap: RecapPayload): string {
 }
 
 async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
+  const C = THEMES[getTheme()];
   const joinUrl = absoluteJoinUrl(recap);
   const qr = await QRCode.toDataURL(joinUrl, {
     margin: 1,
     width: 150,
-    color: { dark: '#EAEAE7', light: '#0B0D14' },
+    color: { dark: C.qrDark, light: C.qrLight },
   });
 
   // Render every round (bounded by the max round count) so the PNG matches the
@@ -66,11 +84,11 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
         null,
         el('div', { style: { fontFamily: DISPLAY, fontWeight: '800', fontSize: '40px', letterSpacing: '0.02em' } },
           el('span', { style: { color: C.cyan } }, '[ ◕‿◕ ] '), 'KAO ', el('span', { style: { color: C.dim } }, '// '), '顔'),
-        el('div', { style: { color: C.steel, letterSpacing: '0.32em', fontSize: '16px', marginTop: '8px' } }, BRAND.tagline),
+        el('div', { style: { color: C.steel, letterSpacing: '0.32em', fontSize: '16px', marginTop: '8px' } }, t('tagline')),
       ),
       el('div', { style: { textAlign: 'right', color: C.dim, fontSize: '15px', letterSpacing: '0.18em' } },
-        el('div', null, 'MATCH RECAP'),
-        el('div', { style: { color: C.lime, fontSize: '22px', marginTop: '6px', letterSpacing: '0.24em' } }, `ROOM ${recap.code}`)),
+        el('div', null, t('matchRecap')),
+        el('div', { style: { color: C.steel, fontSize: '22px', marginTop: '6px', letterSpacing: '0.24em' } }, `${t('room')} ${recap.code}`)),
     ),
   );
 
@@ -80,7 +98,7 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
     body.appendChild(
       el(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: '28px', padding: '6px 0', borderBottom: i < rows.length - 1 ? `1px solid rgba(234,234,231,0.06)` : 'none' } },
+        { style: { display: 'flex', alignItems: 'center', gap: '28px', padding: '6px 0', borderBottom: i < rows.length - 1 ? `1px solid ${C.hair}` : 'none' } },
         el('div', { style: { width: '40px', color: C.dim, fontSize: '20px' } }, `0${i + 1}`),
         el('div', { style: { flex: '1.5', color: C.ink, fontSize: '24px', lineHeight: '1.3' } }, r.situation),
         el('div', { style: { flex: '1', textAlign: 'center', fontSize: '46px', color: C.ink, wordBreak: 'break-word' } }, r.glyphs),
@@ -88,7 +106,7 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
           'div',
           { style: { width: '260px', textAlign: 'right' } },
           el('div', { style: { color: C.cyan, fontSize: '22px' } }, `@${r.handle}`),
-          el('div', { style: { color: C.dim, fontSize: '17px', marginTop: '4px' } }, `${r.votes} ${r.votes === 1 ? 'vote' : 'votes'}`),
+          el('div', { style: { color: C.dim, fontSize: '17px', marginTop: '4px' } }, `${r.votes} ${votesWord(r.votes)}`),
         ),
       ),
     );
@@ -103,7 +121,7 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
       el(
         'div',
         null,
-        el('div', { style: { color: C.dim, fontSize: '18px', letterSpacing: '0.08em' } }, 'play →'),
+        el('div', { style: { color: C.dim, fontSize: '18px', letterSpacing: '0.08em' } }, t('play')),
         el('div', { style: { color: C.steel, fontSize: '26px', marginTop: '6px' } }, joinUrl),
       ),
       el('img', { src: qr, width: 120, height: 120, style: { borderRadius: '8px', background: C.paper } }),
@@ -120,7 +138,7 @@ async function renderToCanvas(recap: RecapPayload): Promise<HTMLCanvasElement> {
   document.body.appendChild(stage);
   try {
     if (document.fonts?.ready) await document.fonts.ready;
-    return await html2canvas(card, { backgroundColor: C.paper, width: 1600, height: 900, scale: 1 });
+    return await html2canvas(card, { backgroundColor: THEMES[getTheme()].paper, width: 1600, height: 900, scale: 1 });
   } finally {
     stage.remove();
   }
@@ -155,7 +173,7 @@ export async function shareRecap(recap: RecapPayload): Promise<boolean> {
       await nav.share({
         files: [file],
         title: BRAND.name,
-        text: `${BRAND.tagline} — play KAO`,
+        text: t('tagline'),
       });
       return true;
     }
@@ -168,7 +186,7 @@ export async function shareRecap(recap: RecapPayload): Promise<boolean> {
 
 export function shareToX(recap: RecapPayload): void {
   const joinUrl = absoluteJoinUrl(recap);
-  const text = `I just played KAO // 顔 ${BRAND.mascot}\n${BRAND.tagline}`;
+  const text = t('shareText', { mascot: BRAND.mascot });
   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(joinUrl)}`;
   window.open(url, '_blank', 'noopener');
 }

@@ -99,6 +99,7 @@ io.on('connection', (socket) => {
       typeof o.handle === 'string' ? o.handle : '',
       socket.id,
       o.settings as Parameters<typeof createRoom>[2],
+      o.lang === 'en' ? 'en' : 'ru',
     );
     bindSocketToRoom(socket, room, player.id);
     ack?.({ ok: true, code: room.code, playerId: player.id });

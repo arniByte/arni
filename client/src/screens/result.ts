@@ -2,6 +2,7 @@
 import { el } from '../dom';
 import { topbar, roomMeta } from '../components/ui';
 import { state } from '../state';
+import { t, votesWord } from '../i18n';
 
 export function renderResult(): HTMLElement {
   const result = state.result;
@@ -15,24 +16,24 @@ export function renderResult(): HTMLElement {
     ? el(
         'div',
         { class: 'panel stack center' },
-        el('span', { class: 'label' }, top.perfectRead ? 'PERFECT READ' : 'TOP FACE'),
+        el('span', { class: 'label' }, top.perfectRead ? t('perfectRead') : t('topFace')),
         el('div', { class: 'face-preview' }, top.glyphs),
         el(
           'div',
           { class: 'row', style: { justifyContent: 'center', gap: '10px' } },
           el('span', { class: 'cyan' }, `@${top.handle}`),
-          el('span', { class: 'dim' }, `· ${top.votes} ${top.votes === 1 ? 'vote' : 'votes'}`),
-          top.perfectRead ? el('span', { class: 'tag perfect' }, 'PERFECT') : null,
+          el('span', { class: 'dim' }, `· ${top.votes} ${votesWord(top.votes)}`),
+          top.perfectRead ? el('span', { class: 'tag perfect' }, t('perfect')) : null,
         ),
       )
-    : el('div', { class: 'panel center dim' }, 'no votes this round');
+    : el('div', { class: 'panel center dim' }, t('noVotesRound'));
 
   const others = ranked.slice(1);
   const rest = others.length
     ? el(
         'div',
         { class: 'panel stack' },
-        el('span', { class: 'label' }, 'THE REST'),
+        el('span', { class: 'label' }, t('theRest')),
         ...others.map((r, i) =>
           el(
             'div',
@@ -49,7 +50,7 @@ export function renderResult(): HTMLElement {
   const scoreboard = el(
     'div',
     { class: 'panel stack' },
-    el('span', { class: 'label' }, 'SCOREBOARD'),
+    el('span', { class: 'label' }, t('scoreboard')),
     el(
       'div',
       { class: 'players' },
@@ -68,11 +69,11 @@ export function renderResult(): HTMLElement {
   return el(
     'main',
     { class: 'screen' },
-    topbar(roomMeta(room.code, 'RESULT ·')),
+    topbar(roomMeta(room.code, t('phaseResult') + ' ·')),
     el('div', { class: 'situation' }, result?.situation ?? ''),
     winnerPanel,
     rest,
     scoreboard,
-    el('div', { class: 'hint center' }, 'next round starting…'),
+    el('div', { class: 'hint center' }, t('nextRound')),
   );
 }

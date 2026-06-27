@@ -37,6 +37,9 @@ export const SCORE = {
 // Placeholder face given to players who don't submit in time.
 export const PLACEHOLDER_FACE = '( ¬_¬ )';
 
+// ── Language (situation prompts are room-level) ──────────────────────────────
+export type Lang = 'ru' | 'en';
+
 // ── Phases ───────────────────────────────────────────────────────────────────
 export type Phase = 'LOBBY' | 'BUILD' | 'VOTE' | 'RESULT' | 'END';
 
@@ -157,7 +160,7 @@ export type JoinAck =
 
 // ── Socket.io typed event maps ───────────────────────────────────────────────
 export interface ClientToServerEvents {
-  'room:create': (p: { handle: string; settings?: Partial<Settings> }, ack: (r: CreateAck) => void) => void;
+  'room:create': (p: { handle: string; settings?: Partial<Settings>; lang?: Lang }, ack: (r: CreateAck) => void) => void;
   'room:join': (p: { code: string; handle: string; playerId?: string }, ack: (r: JoinAck) => void) => void;
   'room:leave': () => void;
   'room:settings': (p: Partial<Settings>) => void;

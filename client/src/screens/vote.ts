@@ -3,6 +3,7 @@ import { el } from '../dom';
 import { topbar, roomMeta, countdown, timerbar } from '../components/ui';
 import { actions } from '../net';
 import { state } from '../state';
+import { t } from '../i18n';
 
 export function renderVote(): HTMLElement {
   const vote = state.vote;
@@ -24,7 +25,7 @@ export function renderVote(): HTMLElement {
           disabled: mine,
           onClick: mine ? undefined : () => actions.castVote(f.id),
         },
-        mine ? el('span', { class: 'pick-tag' }, 'YOU') : picked ? el('span', { class: 'pick-tag' }, '✓ VOTE') : null,
+        mine ? el('span', { class: 'pick-tag' }, t('you')) : picked ? el('span', { class: 'pick-tag' }, t('voteTag')) : null,
         f.glyphs,
       );
     }),
@@ -36,7 +37,7 @@ export function renderVote(): HTMLElement {
     el(
       'div',
       { class: 'row spread' },
-      el('span', { class: 'label' }, 'VOTE THE VIBE'),
+      el('span', { class: 'label' }, t('voteTheVibe')),
       vote ? countdown(vote.endsAt) : null,
     ),
     vote ? timerbar(vote.endsAt, room.settings.voteSecs) : null,
@@ -46,13 +47,13 @@ export function renderVote(): HTMLElement {
   return el(
     'main',
     { class: 'screen' },
-    topbar(roomMeta(room.code, 'VOTE ·')),
+    topbar(roomMeta(room.code, t('phaseVote') + ' ·')),
     header,
     grid,
     el(
       'div',
       { class: 'hint center' },
-      state.myVotedFaceId ? 'vote locked — tap another to change' : 'pick the face that nails it (not your own)',
+      state.myVotedFaceId ? t('voteLockedChange') : t('votePick'),
     ),
   );
 }

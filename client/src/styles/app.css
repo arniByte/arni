@@ -88,7 +88,7 @@
 
 /* ── panel with corner ticks ────────────────────────────────────────────────── */
 .panel {
-  --tickc: rgba(127, 233, 224, 0.45);
+  --tickc: var(--tick-color);
   position: relative;
   border-radius: var(--r);
   padding: 16px;
@@ -138,12 +138,11 @@
 .btn.solid {
   background: var(--cyan);
   border-color: var(--cyan);
-  color: var(--paper);
+  color: var(--on-accent);
   font-weight: 700;
 }
 .btn.solid:hover:not(:disabled) {
-  background: #9af2ea;
-  color: var(--paper);
+  filter: brightness(1.06);
 }
 .btn.lime {
   background: var(--lime);
@@ -152,8 +151,7 @@
   font-weight: 700;
 }
 .btn.lime:hover:not(:disabled) {
-  background: #e3f97f;
-  color: #1a1c10;
+  filter: brightness(1.04);
 }
 .btn.block {
   width: 100%;
@@ -449,7 +447,7 @@
 }
 .vote-card.picked {
   border-color: var(--cyan);
-  background: rgba(127, 233, 224, 0.08);
+  background: var(--accent-soft);
 }
 .vote-card.disabled {
   cursor: default;

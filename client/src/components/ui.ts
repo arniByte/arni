@@ -1,6 +1,44 @@
 // Shared chrome: brand wordmark, top bar, and self-updating countdowns.
 import { el } from '../dom';
 import { BRAND } from '../../../shared/protocol';
+import { t, getLang, setLang, getTheme, setTheme } from '../i18n';
+import { setState } from '../state';
+
+/** Language + theme toggles (shown on the home screen before joining). */
+export function controls(): HTMLElement {
+  const lang = getLang();
+  const theme = getTheme();
+  return el(
+    'div',
+    { class: 'row', style: { gap: '8px' } },
+    el(
+      'button',
+      {
+        class: 'btn sm',
+        type: 'button',
+        title: 'Язык / Language',
+        onClick: () => {
+          setLang(lang === 'ru' ? 'en' : 'ru');
+          setState({});
+        },
+      },
+      lang === 'ru' ? 'EN' : 'RU',
+    ),
+    el(
+      'button',
+      {
+        class: 'btn sm',
+        type: 'button',
+        title: 'Тема / Theme',
+        onClick: () => {
+          setTheme(theme === 'light' ? 'dark' : 'light');
+          setState({});
+        },
+      },
+      theme === 'light' ? '☾' : '☀',
+    ),
+  );
+}
 
 /** KAO // 顔 wordmark with the mascot. */
 export function brandWordmark(opts?: { withMascot?: boolean }): HTMLElement {
@@ -24,7 +62,7 @@ export function roomMeta(code: string, extra?: string): HTMLElement {
     'span',
     { class: 'topmeta' },
     extra ? el('span', null, extra) : null,
-    el('span', null, 'ROOM '),
+    el('span', null, t('room') + ' '),
     el('span', { class: 'code' }, code),
   );
 }

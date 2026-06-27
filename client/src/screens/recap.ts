@@ -4,6 +4,7 @@ import { topbar, roomMeta } from '../components/ui';
 import { actions } from '../net';
 import { state, isHost, setState } from '../state';
 import { downloadRecap, shareRecap, shareToX, absoluteJoinUrl } from '../recap/recapCard';
+import { t } from '../i18n';
 
 async function withBusy(btn: HTMLButtonElement, label: string, fn: () => Promise<unknown>): Promise<void> {
   const prev = btn.textContent;
@@ -12,7 +13,7 @@ async function withBusy(btn: HTMLButtonElement, label: string, fn: () => Promise
   try {
     await fn();
   } catch {
-    setState({ error: 'Could not render the card' });
+    setState({ error: t('cardError') });
   } finally {
     btn.disabled = false;
     btn.textContent = prev;
@@ -29,16 +30,16 @@ export function renderRecap(): HTMLElement {
   const winnerPanel = el(
     'div',
     { class: 'panel stack center' },
-    el('span', { class: 'label' }, 'WINNER'),
-    el('div', { class: 'face-preview', style: { minHeight: '0', color: 'var(--lime)' } }, '◕‿◕'),
+    el('span', { class: 'label' }, t('winner')),
+    el('div', { class: 'face-preview', style: { minHeight: '0', color: 'var(--cyan)' } }, '◕‿◕'),
     el('div', { class: 'display lg' }, winner ? `@${winner.handle}` : '—'),
-    el('div', { class: 'dim' }, winner ? `${winner.score} pts` : ''),
+    el('div', { class: 'dim' }, winner ? `${winner.score} ${t('pts')}` : ''),
   );
 
   const boardPanel = el(
     'div',
     { class: 'panel stack' },
-    el('span', { class: 'label' }, 'FINAL SCOREBOARD'),
+    el('span', { class: 'label' }, t('finalScoreboard')),
     el(
       'div',
       { class: 'players' },
@@ -58,7 +59,7 @@ export function renderRecap(): HTMLElement {
     ? el(
         'div',
         { class: 'panel stack' },
-        el('span', { class: 'label' }, 'RECAP CARD'),
+        el('span', { class: 'label' }, t('recapCardLabel')),
         ...recap.rows.map((r, i) =>
           el(
             'div',
@@ -72,25 +73,25 @@ export function renderRecap(): HTMLElement {
       )
     : null;
 
-  const dlBtn = el('button', { class: 'btn solid', type: 'button' }, '↓ DOWNLOAD PNG') as HTMLButtonElement;
-  dlBtn.onclick = () => recap && withBusy(dlBtn, 'rendering…', () => downloadRecap(recap));
+  const dlBtn = el('button', { class: 'btn solid', type: 'button' }, t('downloadPng')) as HTMLButtonElement;
+  dlBtn.onclick = () => recap && withBusy(dlBtn, t('rendering'), () => downloadRecap(recap));
 
-  const shareBtn = el('button', { class: 'btn', type: 'button' }, '⇪ SHARE') as HTMLButtonElement;
-  shareBtn.onclick = () => recap && withBusy(shareBtn, 'rendering…', () => shareRecap(recap));
+  const shareBtn = el('button', { class: 'btn', type: 'button' }, t('shareBtn')) as HTMLButtonElement;
+  shareBtn.onclick = () => recap && withBusy(shareBtn, t('rendering'), () => shareRecap(recap));
 
-  const xBtn = el('button', { class: 'btn lime', type: 'button' }, 'SHARE TO X') as HTMLButtonElement;
+  const xBtn = el('button', { class: 'btn lime', type: 'button' }, t('shareToX')) as HTMLButtonElement;
   xBtn.onclick = () => recap && shareToX(recap);
 
   const actionsRow = el('div', { class: 'row wrap', style: { justifyContent: 'center' } }, dlBtn, shareBtn, xBtn);
 
   const playAgain = isHost()
-    ? el('button', { class: 'btn solid block', type: 'button', onClick: () => actions.startGame() }, 'PLAY AGAIN ▶')
-    : el('div', { class: 'hint center' }, 'waiting for the host to start a new match…');
+    ? el('button', { class: 'btn solid block', type: 'button', onClick: () => actions.startGame() }, t('playAgain'))
+    : el('div', { class: 'hint center' }, t('waitingHostNew'));
 
   return el(
     'main',
     { class: 'screen' },
-    topbar(roomMeta(room.code, 'OVER ·')),
+    topbar(roomMeta(room.code, t('phaseOver') + ' ·')),
     winnerPanel,
     actionsRow,
     rowsPreview,
@@ -100,7 +101,7 @@ export function renderRecap(): HTMLElement {
       'div',
       { class: 'row spread headline-foot' },
       el('span', { class: 'hint' }, recap ? absoluteJoinUrl(recap) : ''),
-      el('button', { class: 'btn sm', type: 'button', onClick: () => actions.leaveRoom() }, 'LEAVE'),
+      el('button', { class: 'btn sm', type: 'button', onClick: () => actions.leaveRoom() }, t('leave')),
     ),
   );
 }

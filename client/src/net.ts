@@ -10,6 +10,7 @@ import type {
   Settings,
 } from '../../shared/protocol';
 import { state, setState } from './state';
+import { getLang, t } from './i18n';
 
 const LS = { pid: 'kao.playerId', handle: 'kao.handle', code: 'kao.code' } as const;
 
@@ -41,7 +42,7 @@ export function storedSession(): { code: string; handle: string; playerId: strin
 export const actions = {
   createRoom(handle: string): void {
     setState({ handle, busy: true, error: null });
-    socket.emit('room:create', { handle }, (res: CreateAck) => {
+    socket.emit('room:create', { handle, lang: getLang() }, (res: CreateAck) => {
       setState({ busy: false });
       if (res.ok) {
         lastCode = res.code;
@@ -190,7 +191,11 @@ socket.on('player:left', () => {
 });
 
 socket.on('error', (e) => {
-  const patch: Partial<typeof state> = { error: e.message };
+  // Localize by error code; fall back to the server's message, then a default.
+  const key = `err_${e.code}`;
+  const localized = t(key);
+  const message = localized !== key ? localized : e.message || t('err_DEFAULT');
+  const patch: Partial<typeof state> = { error: message };
   if (e.code === 'BAD_FACE') patch.mySubmitted = false; // let them retry
   setState(patch);
 });

@@ -43,14 +43,15 @@ export function clearRoomTimers(room: Room): void {
 
 function pickSituation(room: Room): string {
   // Fresh situation, no repeats within a match; reset the pool if exhausted.
-  let pool = SITUATIONS.filter((s) => !room.usedSituations.has(s));
+  // Track "used" by the stable English id so language never affects de-duping.
+  let pool = SITUATIONS.filter((s) => !room.usedSituations.has(s.en));
   if (pool.length === 0) {
     room.usedSituations.clear();
     pool = SITUATIONS.slice();
   }
   const choice = pool[Math.floor(Math.random() * pool.length)];
-  room.usedSituations.add(choice);
-  return choice;
+  room.usedSituations.add(choice.en);
+  return room.lang === 'en' ? choice.en : choice.ru;
 }
 
 function shuffle<T>(arr: T[]): T[] {

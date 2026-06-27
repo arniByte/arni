@@ -4,6 +4,7 @@ import { topbar, roomMeta } from '../components/ui';
 import { LIMITS } from '../../../shared/protocol';
 import { actions } from '../net';
 import { state, isHost, setState } from '../state';
+import { t } from '../i18n';
 
 function joinUrl(code: string): string {
   return `${location.origin}/?c=${code}`;
@@ -12,7 +13,7 @@ function joinUrl(code: string): string {
 function copy(text: string, okMsg: string): void {
   navigator.clipboard?.writeText(text).then(
     () => setState({ error: okMsg }),
-    () => setState({ error: 'Copy failed — long-press to copy' }),
+    () => setState({ error: t('copyFailed') }),
   );
 }
 
@@ -42,8 +43,8 @@ export function renderLobby(): HTMLElement {
         { class: 'prow' + (p.id === state.playerId ? ' me' : '') + (p.connected ? '' : ' off') },
         el('span', { class: 'avatar' }, p.faceAvatar || '◌'),
         el('span', { class: 'pname' }, p.handle),
-        p.id === room.host ? el('span', { class: 'tag host' }, 'HOST') : null,
-        p.id === state.playerId ? el('span', { class: 'tag you' }, 'YOU') : null,
+        p.id === room.host ? el('span', { class: 'tag host' }, t('host')) : null,
+        p.id === state.playerId ? el('span', { class: 'tag you' }, t('you')) : null,
       ),
     ),
   );
@@ -51,11 +52,11 @@ export function renderLobby(): HTMLElement {
   const settings = el(
     'div',
     { class: 'panel stack' },
-    el('span', { class: 'label' }, 'SETTINGS'),
-    stepper('ROUNDS', room.settings.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, (v) => actions.updateSettings({ rounds: v })),
-    stepper('BUILD SECS', room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
-    stepper('VOTE SECS', room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
-    isHost() ? null : el('div', { class: 'hint' }, 'only the host can change settings'),
+    el('span', { class: 'label' }, t('settings')),
+    stepper(t('rounds'), room.settings.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, (v) => actions.updateSettings({ rounds: v })),
+    stepper(t('buildSecs'), room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
+    stepper(t('voteSecs'), room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
+    isHost() ? null : el('div', { class: 'hint' }, t('hostOnlySettings')),
   );
 
   const startBlock = isHost()
@@ -65,11 +66,13 @@ export function renderLobby(): HTMLElement {
         el(
           'button',
           { class: 'btn lime block', type: 'button', disabled: !canStart, onClick: () => actions.startGame() },
-          canStart ? 'START MATCH ▶' : `NEED ${LIMITS.MIN_PLAYERS - connected} MORE`,
+          canStart ? t('startMatch') : t('needMore', { n: LIMITS.MIN_PLAYERS - connected }),
         ),
-        connected < LIMITS.MIN_PLAYERS ? el('div', { class: 'hint center' }, `${connected}/${LIMITS.MIN_PLAYERS} players minimum`) : null,
+        connected < LIMITS.MIN_PLAYERS
+          ? el('div', { class: 'hint center' }, t('minPlayers', { n: connected, m: LIMITS.MIN_PLAYERS }))
+          : null,
       )
-    : el('div', { class: 'hint center' }, 'waiting for the host to start…');
+    : el('div', { class: 'hint center' }, t('waitingHostStart'));
 
   return el(
     'main',
@@ -79,26 +82,26 @@ export function renderLobby(): HTMLElement {
     el(
       'div',
       { class: 'panel stack center' },
-      el('span', { class: 'label' }, 'ROOM CODE'),
+      el('span', { class: 'label' }, t('roomCode')),
       el('div', { class: 'display lg', style: { letterSpacing: '0.28em', color: 'var(--cyan)' } }, room.code),
       el(
         'div',
         { class: 'row', style: { justifyContent: 'center' } },
-        el('button', { class: 'btn sm', type: 'button', onClick: () => copy(room.code, 'Code copied') }, 'COPY CODE'),
-        el('button', { class: 'btn sm', type: 'button', onClick: () => copy(joinUrl(room.code), 'Invite link copied') }, 'COPY LINK'),
+        el('button', { class: 'btn sm', type: 'button', onClick: () => copy(room.code, t('codeCopied')) }, t('copyCode')),
+        el('button', { class: 'btn sm', type: 'button', onClick: () => copy(joinUrl(room.code), t('linkCopied')) }, t('copyLink')),
       ),
     ),
 
     el(
       'div',
       { class: 'panel stack' },
-      el('div', { class: 'row spread' }, el('span', { class: 'label' }, 'PLAYERS'), el('span', { class: 'count-pill' }, `${connected}/${LIMITS.MAX_PLAYERS}`)),
+      el('div', { class: 'row spread' }, el('span', { class: 'label' }, t('players')), el('span', { class: 'count-pill' }, `${connected}/${LIMITS.MAX_PLAYERS}`)),
       roster,
     ),
 
     settings,
     startBlock,
 
-    el('div', { class: 'row spread headline-foot' }, el('span', { class: 'hint' }, 'leave anytime'), el('button', { class: 'btn sm', type: 'button', onClick: () => actions.leaveRoom() }, 'LEAVE')),
+    el('div', { class: 'row spread headline-foot' }, el('span', { class: 'hint' }, t('leaveAnytime')), el('button', { class: 'btn sm', type: 'button', onClick: () => actions.leaveRoom() }, t('leave'))),
   );
 }

@@ -3,6 +3,7 @@
 // clobbered by unrelated updates. Toasts update on every change.
 import { el } from './dom';
 import { state, subscribe, setState, type AppState, type Screen } from './state';
+import { getLang, getTheme } from './i18n';
 import { renderHome } from './screens/home';
 import { renderLobby } from './screens/lobby';
 import { renderBuild } from './screens/build';
@@ -20,13 +21,14 @@ const screens: Record<Screen, () => HTMLElement> = {
 };
 
 function viewKey(s: AppState): string {
+  const i18n = `${getLang()}|${getTheme()}`;
   switch (s.screen) {
     case 'BUILD':
       // Rebuild on a new round, or when our submitted-state flips (submit /
       // reconnect-restore) — both preserve the face builder's local state otherwise.
-      return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}`;
+      return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}|${i18n}`;
     case 'VOTE':
-      return `VOTE|${s.round?.index ?? 0}|${s.myFaceId ?? ''}|${s.myVotedFaceId ?? ''}`;
+      return `VOTE|${s.round?.index ?? 0}|${s.myFaceId ?? ''}|${s.myVotedFaceId ?? ''}|${i18n}`;
     default: {
       const players =
         s.room?.players
@@ -35,7 +37,7 @@ function viewKey(s: AppState): string {
       const settings = s.room
         ? `${s.room.settings.rounds}-${s.room.settings.buildSecs}-${s.room.settings.voteSecs}`
         : '';
-      return [s.screen, players, settings, s.room?.host ?? '', s.result?.situation ?? '', s.matchEnd ? 1 : 0].join('|');
+      return [s.screen, players, settings, s.room?.host ?? '', s.result?.situation ?? '', s.matchEnd ? 1 : 0, i18n].join('|');
     }
   }
 }

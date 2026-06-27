@@ -3,6 +3,7 @@
 // Letters & digits are hard-blocked so it stays pure expression.
 import { el, clear } from '../dom';
 import { facePreview } from './kaomoji';
+import { t } from '../i18n';
 import {
   EYES,
   MOUTHS,
@@ -72,7 +73,7 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
   const randomBtn = el(
     'button',
     { class: 'chip lime', type: 'button', onClick: roll },
-    '⟳ RANDOM',
+    t('random'),
   );
   const presetRow = el('div', { class: 'row wrap' }, ...presetChips, randomBtn);
 
@@ -83,14 +84,14 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
     autocomplete: 'off',
     autocapitalize: 'off',
     spellcheck: false,
-    placeholder: 'or free-type symbols — no letters / digits',
+    placeholder: t('freeTypePlaceholder'),
     onInput: onFreeInput,
   }) as HTMLInputElement;
 
   const submitBtn = el(
     'button',
     { class: 'btn solid block', type: 'button', onClick: submit },
-    'LOCK IN FACE ⏎',
+    t('lockInFace'),
   );
 
   const body = el(
@@ -98,8 +99,8 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
     { class: 'stack' },
     el('div', { class: 'panel' }, preview),
     el('div', { class: 'stack', style: { gap: '6px' } }, slots, slotLabels),
-    el('div', { class: 'field' }, el('span', { class: 'label' }, 'ARMS'), armsRow),
-    el('div', { class: 'field' }, el('span', { class: 'label' }, 'PRESETS'), presetRow),
+    el('div', { class: 'field' }, el('span', { class: 'label' }, t('arms')), armsRow),
+    el('div', { class: 'field' }, el('span', { class: 'label' }, t('presets')), presetRow),
     freeInput,
     submitBtn,
   );
@@ -182,8 +183,8 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
         'div',
         { class: 'stack center' },
         el('div', { class: 'panel' }, facePreview(glyphs)),
-        el('div', { class: 'chip', style: { alignSelf: 'center' } }, '✓ LOCKED IN'),
-        el('div', { class: 'hint center' }, 'waiting for the room…'),
+        el('div', { class: 'chip', style: { alignSelf: 'center' } }, t('lockedIn')),
+        el('div', { class: 'hint center' }, t('waitingRoom')),
       ),
     );
   }

@@ -5,6 +5,7 @@ import { facePreview } from '../components/kaomoji';
 import { createFaceBuilder } from '../components/faceBuilder';
 import { actions } from '../net';
 import { state } from '../state';
+import { t } from '../i18n';
 
 export function renderBuild(): HTMLElement {
   const round = state.round;
@@ -16,7 +17,7 @@ export function renderBuild(): HTMLElement {
     el(
       'div',
       { class: 'row spread' },
-      el('span', { class: 'label' }, round ? `ROUND ${round.index} / ${round.total}` : 'ROUND'),
+      el('span', { class: 'label' }, round ? t('roundOf', { i: round.index, n: round.total }) : t('roundOf', { i: 1, n: 1 })),
       round ? countdown(round.endsAt) : null,
     ),
     round ? timerbar(round.endsAt, room.settings.buildSecs) : null,
@@ -30,10 +31,10 @@ export function renderBuild(): HTMLElement {
           'div',
           { class: 'stack center' },
           el('div', { class: 'panel' }, facePreview(state.mySubmittedGlyphs)),
-          el('div', { class: 'chip', style: { alignSelf: 'center' } }, '✓ LOCKED IN'),
-          el('div', { class: 'hint center' }, 'waiting for the room…'),
+          el('div', { class: 'chip', style: { alignSelf: 'center' } }, t('lockedIn')),
+          el('div', { class: 'hint center' }, t('waitingRoom')),
         )
       : createFaceBuilder((glyphs) => actions.submitFace(glyphs));
 
-  return el('main', { class: 'screen' }, topbar(roomMeta(room.code, 'BUILD ·')), header, body);
+  return el('main', { class: 'screen' }, topbar(roomMeta(room.code, t('phaseBuild') + ' ·')), header, body);
 }

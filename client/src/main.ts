@@ -4,6 +4,9 @@
 import './net';
 import { startRender } from './render';
 import { tickClocks } from './components/ui';
+import { applyThemeFromStorage } from './i18n';
+
+applyThemeFromStorage();
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app not found');

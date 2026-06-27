@@ -5,6 +5,7 @@ import {
   DEFAULT_SETTINGS,
   LIMITS,
   type Phase,
+  type Lang,
   type Settings,
   type PublicPlayer,
   type RoomStatePayload,
@@ -50,6 +51,7 @@ export interface Room {
   players: Map<string, Player>;
   phase: Phase;
   settings: Settings;
+  lang: Lang; // language of the situation prompts for this room
   roundIndex: number; // -1 in lobby; 0-based during play
 
   // per-round transient state
@@ -124,6 +126,7 @@ export function createRoom(
   rawHandle: string,
   socketId: string,
   settings?: Partial<Settings>,
+  lang: Lang = 'ru',
 ): { room: Room; player: Player } {
   const handle = sanitizeHandle(rawHandle) || 'PLAYER';
   const player = newPlayer(handle, socketId);
@@ -133,6 +136,7 @@ export function createRoom(
     players: new Map([[player.id, player]]),
     phase: 'LOBBY',
     settings: clampSettings(settings, DEFAULT_SETTINGS),
+    lang: lang === 'en' ? 'en' : 'ru',
     roundIndex: -1,
     situation: '',
     usedSituations: new Set(),
