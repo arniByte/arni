@@ -65,8 +65,8 @@ export function renderRecap(): HTMLElement {
             'div',
             { class: 'prow' },
             el('span', { class: 'rank' }, `0${i + 1}`),
-            el('span', { class: 'pname dim', style: { fontSize: '12px' } }, r.situation),
-            el('span', { class: 'face-preview small', style: { minHeight: '0', flex: 'none', width: '90px' } }, r.glyphs),
+            el('span', { class: 'pname dim', style: { fontSize: '13px' } }, r.situation),
+            el('span', { class: 'face-cell' }, r.glyphs),
             el('span', { class: 'pscore' }, `${r.votes}`),
           ),
         ),
@@ -99,9 +99,9 @@ export function renderRecap(): HTMLElement {
     playAgain,
     el(
       'div',
-      { class: 'row spread headline-foot' },
-      el('span', { class: 'hint' }, recap ? absoluteJoinUrl(recap) : ''),
-      el('button', { class: 'btn sm', type: 'button', onClick: () => actions.leaveRoom() }, t('leave')),
+      { class: 'row spread headline-foot', style: { gap: '12px' } },
+      el('span', { class: 'hint', style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: '0' } }, recap ? absoluteJoinUrl(recap) : ''),
+      el('button', { class: 'btn sm outline', type: 'button', onClick: () => actions.leaveRoom() }, t('leave')),
     ),
   );
 }
