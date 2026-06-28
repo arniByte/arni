@@ -297,10 +297,13 @@ function finishRound(io: IO, room: Room): void {
       impPlayer.score += SCORE.IMPOSTOR_EVADE; // jackpot for slipping past
     }
 
-    if (impSub && impPlayer) {
+    // Build the reveal from the submission snapshot (authorId/authorHandle) so
+    // it survives even if the impostor left mid-round (the +250 evade above is
+    // the only thing that needs a still-present player).
+    if (impSub) {
       impostorReveal = {
-        id: impPlayer.id,
-        handle: impPlayer.handle,
+        id: impSub.authorId,
+        handle: impSub.authorHandle,
         glyphs: impSub.glyphs,
         faceId: impSub.faceId,
         decoySituation: room.decoySituation,
@@ -310,7 +313,7 @@ function finishRound(io: IO, room: Room): void {
       room.recapRounds.push({
         situation: room.situation,
         glyphs: impSub.glyphs,
-        handle: impPlayer.handle,
+        handle: impSub.authorHandle,
         votes: impVotes,
       });
     }
