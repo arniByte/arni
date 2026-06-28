@@ -7,10 +7,11 @@ A realtime, no-words online party game. You get a **situation**, you build a **f
 *One sentence: you get a situation, you build a face, everyone votes for the best one.*
 
 - No accounts, no database. Join with a 4-character room code (Jackbox / skribbl model).
-- **Two game modes:** CLASSIC (everyone gets the same situation) and IMPOSTOR (one player secretly gets a *different* situation — find them).
+- **Three game modes:** CLASSIC (everyone gets the same situation, vote the best), IMPOSTOR (one player secretly gets a *different* situation — find them), and **BLITZ** (a fast 2-player duel — race to build, then guess which situation drove your rival's face).
+- **Post-match "top moments" review** — scroll back through every round to see who built what and the votes.
 - Mobile-first, **glassmorphism** UI with a vivid **neon magenta-pink** accent; light (default) + dark themes.
 - **Russian default, English toggle.** Telegram Mini App-aware (safe-area handling).
-- **Synthesized, file-free sound** (Web Audio): adaptive taps, phase cues, countdown ticks, soft ambient — all muteable.
+- **Synthesized, file-free sound** (Web Audio): adaptive taps, phase cues, countdown ticks, and a quiet **8-bit chiptune** — all muteable.
 - One Node process serves the built client **and** the Socket.io endpoint.
 
 ---
@@ -114,8 +115,8 @@ client/
   src/sound.ts          # Web Audio sound engine (taps, phase cues, ticks, ambient pad) — no audio files
   src/viewport.ts       # Telegram safe-area insets + scroll parallax for the background faces
   src/components/       # faceBuilder (the mechanic), palettes, kaomoji preview, ui chrome,
-                        #   icons (inline SVG), rulesModal, animatedFace, bgFaces
-  src/screens/          # home / lobby / build / vote / result / recap
+                        #   icons (inline SVG), rulesModal, reviewModal, animatedFace, bgFaces
+  src/screens/          # home / lobby / build / vote / result / recap / blitz (duel screens)
   src/recap/recapCard.ts  # html2canvas + qrcode -> shareable PNG
   src/styles/           # tokens.css (design tokens, themes, grid, aurora) + app.css (components)
 ```
@@ -140,6 +141,7 @@ Clients render `endsAt` countdowns locally but **never** advance phases. The ser
 - **Modes:**
   - **CLASSIC** — everyone gets the **same** situation; build the face that reads it best, collect votes.
   - **IMPOSTOR** — one player secretly gets a **different** situation. Everyone builds faces, then hunts the one that doesn't fit. The room scores for catching the impostor; the impostor scores (`IMPOSTOR_EVADE`) for slipping by. Best with 4–5 players.
+  - **BLITZ** (exactly **2 players**) — a twitch duel with its own phase flow `BLITZ_BUILD → BLITZ_GUESS → BLITZ_RESULT`. Each round both players secretly get **their own** situation and race to build a face; then each **guesses which of the two real situations drove the opponent's face** (server-checkable truth — no third-party voter). Points for the READ (+100), being legible / EXPRESSION (+60), SPEED (+40), a read-streak COMBO multiplier, and a shared SYNC bonus when both read each other. The end **scorecard** shows the scoreline, a **СИНХРОН %** couples-test stat, per-player streak / fastest-face / read-accuracy, and the "biggest misread" comedy pin. Disconnect/forfeit hands the win to the remaining player.
 - **Scoring:** each vote = **+100** to the face's author. A **perfect read** (every voter — ≥2 of them — converges on one single face) adds a bonus and is tagged `PERFECT READ`.
 - **Winner:** top cumulative score; ties broken by best single-round vote count, then earliest to join.
 
@@ -173,7 +175,8 @@ The client is deliberately "no framework" but heavily designed. Everything below
 - **Glassmorphism** — panels, top bar, vote cards, modal and icon buttons are frosted glass: a `backdrop-filter` blur/saturate over a gradient + a radial **specular sheen**, an inset bright **edge**, and a faint accent **refraction** glow. Behind the glass, soft **aurora** color blobs drift so there's real color to frost.
 - **Pinned grid + parallax** — the lattice is a `position:fixed` layer (`html::before`), so the floating background kaomoji (`bgFaces`) and content **slide over a stationary grid** as you scroll; the faces also drift continuously and parallax on scroll (`viewport.ts`).
 - **Fonts** — **Space Mono** (Latin) + **JetBrains Mono** (Cyrillic body) for the mono UI, paired with **Unbounded** for the big display headlines (full Cyrillic).
-- **Sound** (`sound.ts`) — a synthesized, file-free Web Audio engine: **adaptive taps** (each press walks a pentatonic scale), **phase cues** (a motif per `BUILD/VOTE/RESULT/RECAP`), **countdown ticks** in the final seconds, and a quiet **ambient pad**. The `AudioContext` is created/resumed only on the first user gesture (autoplay-safe); a menu toggle mutes everything and persists (`kao.muted`).
+- **Sound** (`sound.ts`) — a synthesized, file-free Web Audio engine: **adaptive taps** (each press walks a pentatonic scale), **phase cues** (a motif per `BUILD/VOTE/RESULT/RECAP`), **countdown ticks** in the final seconds, and a quiet looping **8-bit chiptune** (a lookahead-scheduled square-lead arpeggio over C–G–Am–F + a triangle bass). The `AudioContext` is created/resumed only on the first user gesture (autoplay-safe); a menu toggle mutes everything and persists (`kao.muted`).
+- **Match review** (`components/reviewModal.ts`) — after a CLASSIC/IMPOSTOR match, a "★ ТОП МОМЕНТЫ" button opens a per-round breakdown (every face + votes, winner starred, impostor revealed) plus the single highest-voted "top moment". Fed by `MatchEndPayload.rounds` (the server keeps `roundHistory`).
 - **i18n** (`i18n.ts`) — flat RU/EN dictionaries + `t(key, params)` with Russian plural rules; **Russian is the default**, English is a toggle.
 - **Telegram Mini App** — `viewport.ts` reads the WebApp safe-area + content-safe-area insets and exposes them as `--safe-top`/`--safe-bottom` so the floating top bar clears Telegram's fullscreen header and stays tappable; `env(safe-area-inset-*)` is the non-Telegram fallback.
 - **Rules modal** — a "how to play" overlay (help icon) explaining the flow + both modes, in RU/EN.

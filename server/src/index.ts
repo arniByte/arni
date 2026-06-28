@@ -29,6 +29,8 @@ import {
   startGame,
   handleSubmit,
   handleVote,
+  handleBlitzAnswer,
+  blitzForfeitIfAlone,
   getRecap,
   snapshotTo,
   clearRoomTimers,
@@ -87,6 +89,7 @@ const errFor = (code: string): ErrorPayload => {
     [ERR.BAD_FACE]: 'Face must be symbols only',
     [ERR.IN_PROGRESS]: 'Match already in progress',
     [ERR.BAD_HANDLE]: 'Pick a handle first',
+    [ERR.NEED_2_PLAYERS]: 'Blitz needs exactly 2 players',
   };
   return { code, message: messages[code] ?? 'Something went wrong' };
 };
@@ -189,6 +192,15 @@ io.on('connection', (socket) => {
     handleVote(io, room, socket.data.playerId, faceId);
   });
 
+  // ── blitz guess ───────────────────────────────────────────────────────────────
+  socket.on('blitz:answer', (p) => {
+    const room = currentRoom(socket.data);
+    if (!room || !socket.data.playerId) return;
+    const token = asObject(p).token;
+    if (typeof token !== 'number') return;
+    handleBlitzAnswer(io, room, socket.data.playerId, token);
+  });
+
   // ── recap ───────────────────────────────────────────────────────────────────
   socket.on('recap:request', (ack) => {
     const room = currentRoom(socket.data);
@@ -228,6 +240,8 @@ function finalizeRemoval(room: Room, playerId: string): void {
   }
   io.to(room.code).emit('player:left', { playerId });
   io.to(room.code).emit('room:state', publicState(room));
+  // A BLITZ duel can't continue with one player — end it (remaining player wins).
+  blitzForfeitIfAlone(io, room);
 }
 
 httpServer.listen(PORT, () => {

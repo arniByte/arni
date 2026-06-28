@@ -1,8 +1,8 @@
 // File-free sound system (Web Audio API) — no audio assets, tiny footprint.
 // Pleasant, *adaptive* UI sounds (taps walk a pentatonic scale so rapid tapping
 // turns into a little melody instead of one repeated blip) plus phase cues,
-// countdown ticks, and a soft evolving ambient pad. Everything routes through a
-// master gain so a single mute flag (persisted) silences it all. The
+// countdown ticks, and a quiet looping 8-bit chiptune. Everything routes through
+// a master gain so a single mute flag (persisted) silences it all. The
 // AudioContext is created + resumed on the first user gesture (autoplay policy).
 
 const MUTE_KEY = 'kao.muted';
@@ -10,8 +10,12 @@ const MUTE_KEY = 'kao.muted';
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = false;
-let started = false; // ctx created + (maybe) ambient running
-let ambient: { stop: () => void } | null = null;
+let started = false; // ctx created + (maybe) music running
+// chiptune music state
+let music: GainNode | null = null;
+let musicTimer: number | null = null;
+let musicStep = 0;
+let musicNextTime = 0;
 
 export function getMuted(): boolean {
   return muted;
@@ -129,61 +133,84 @@ export function sPhase(screen: string): void {
   }
 }
 
-// ── ambient pad: quiet, slowly-evolving drone (toggles with mute) ────────────
-function startAmbient(): void {
+// ── 8-bit chiptune loop (replaces the old drone) ─────────────────────────────
+// A gentle looping arpeggio over a I–V–vi–IV progression (C–G–Am–F): a square
+// lead plucks the chord tones while a soft square bass holds the root. Always
+// pleasant (diatonic), kept quiet so it sits under the SFX. Scheduled with a
+// lookahead clock so timing stays rock-steady regardless of the JS event loop.
+const MIDI = (m: number): number => 440 * Math.pow(2, (m - 69) / 12);
+// chord = { bass root, 4 arpeggio tones } — one chord per bar (8 eighth-steps).
+const PROG = [
+  { bass: 48, arp: [60, 64, 67, 72] }, // C
+  { bass: 43, arp: [59, 62, 67, 71] }, // G
+  { bass: 45, arp: [60, 64, 69, 72] }, // Am
+  { bass: 41, arp: [60, 65, 69, 72] }, // F
+];
+const ARP_SEQ = [0, 2, 1, 3, 2, 1, 3, 2]; // up-down weave within each bar
+const EIGHTH = 0.2; // seconds per step (~150 bpm eighths)
+const STEPS = PROG.length * 8; // 32-step loop
+
+function blip(midi: number, at: number, type: OscillatorType, dur: number, gain: number): void {
   const c = ctx;
-  if (!c || !master || muted || ambient) return;
-  try {
-    const pad = c.createGain();
-    pad.gain.value = 0.0001;
-    pad.connect(master);
-    pad.gain.setTargetAtTime(0.05, c.currentTime, 2.5); // ease in, stay subtle
-
-    const lp = c.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 640;
-    lp.Q.value = 0.6;
-    lp.connect(pad);
-
-    // soft C drone (C3 / G3 / C4), slightly detuned for warmth
-    const freqs = [130.81, 196.0, 261.63];
-    const oscs = freqs.map((f, i) => {
-      const o = c.createOscillator();
-      o.type = 'sine';
-      o.frequency.value = f * (i === 1 ? 1.004 : 1);
-      o.connect(lp);
-      o.start();
-      return o;
-    });
-    // slow filter sweep for gentle movement
-    const lfo = c.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.05;
-    const lfoGain = c.createGain();
-    lfoGain.gain.value = 180;
-    lfo.connect(lfoGain);
-    lfoGain.connect(lp.frequency);
-    lfo.start();
-
-    ambient = {
-      stop() {
-        const cc = ctx;
-        const tt = cc ? cc.currentTime : 0;
-        pad.gain.setTargetAtTime(0.0001, tt, 0.4);
-        oscs.forEach((o) => o.stop(tt + 0.8));
-        lfo.stop(tt + 0.8);
-      },
-    };
-  } catch {
-    ambient = null;
-  }
+  if (!c || !music) return;
+  const f = MIDI(midi);
+  const osc = c.createOscillator();
+  osc.type = type;
+  osc.frequency.setValueAtTime(f, at);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(gain, at + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  osc.connect(g);
+  g.connect(music);
+  osc.start(at);
+  osc.stop(at + dur + 0.02);
 }
 
-function stopAmbient(): void {
-  if (ambient) {
-    ambient.stop();
-    ambient = null;
+function scheduleStep(step: number, at: number): void {
+  const bar = Math.floor(step / 8) % PROG.length;
+  const within = step % 8;
+  const chord = PROG[bar];
+  // lead arpeggio (bright square pluck)
+  blip(chord.arp[ARP_SEQ[within]], at, 'square', 0.16, 0.05);
+  // bass on the down/half beats (square, low + soft)
+  if (within === 0 || within === 4) blip(chord.bass, at, 'triangle', 0.42, 0.06);
+  // a light off-beat octave sparkle every other bar for a touch of motion
+  if (within === 6 && bar % 2 === 1) blip(chord.arp[3] + 12, at, 'square', 0.1, 0.03);
+}
+
+function startMusic(): void {
+  const c = ctx;
+  if (!c || !master || muted || music) return;
+  music = c.createGain();
+  music.gain.value = 0.0001;
+  music.connect(master);
+  music.gain.setTargetAtTime(0.5, c.currentTime, 1.2); // ease in, stay background
+  musicStep = 0;
+  musicNextTime = c.currentTime + 0.1;
+  musicTimer = window.setInterval(() => {
+    const cc = ctx;
+    if (!cc || !music) return;
+    while (musicNextTime < cc.currentTime + 0.15) {
+      scheduleStep(musicStep, musicNextTime);
+      musicNextTime += EIGHTH;
+      musicStep = (musicStep + 1) % STEPS;
+    }
+  }, 40);
+}
+
+function stopMusic(): void {
+  if (musicTimer != null) {
+    window.clearInterval(musicTimer);
+    musicTimer = null;
   }
+  const g = music;
+  const c = ctx;
+  if (g && c) {
+    g.gain.setTargetAtTime(0.0001, c.currentTime, 0.25);
+    window.setTimeout(() => g.disconnect(), 600);
+  }
+  music = null;
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────────
@@ -195,13 +222,13 @@ export function setMuted(m: boolean): void {
     /* ignore */
   }
   if (m) {
-    stopAmbient();
+    stopMusic();
     rampMaster();
   } else {
     const c = ensureCtx();
     if (c && c.state === 'suspended') void c.resume();
     rampMaster();
-    startAmbient();
+    startMusic();
     sConfirm(); // little chirp confirming sound is back on
   }
 }
@@ -212,7 +239,7 @@ function wake(): void {
   if (c.state === 'suspended') void c.resume();
   if (!started) {
     started = true;
-    if (!muted) startAmbient();
+    if (!muted) startMusic();
   }
 }
 
