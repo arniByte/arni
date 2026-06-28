@@ -5,6 +5,7 @@ import { t, getLang, setLang, getTheme, setTheme } from '../i18n';
 import { setState } from '../state';
 import { rulesButton } from './rulesModal';
 import { ICON } from './icons';
+import { getMuted, setMuted, sTick } from '../sound';
 
 /** A round, frosted icon button carrying an inline SVG glyph. */
 export function iconButton(svg: string, title: string, onClick: () => void): HTMLButtonElement {
@@ -13,14 +14,19 @@ export function iconButton(svg: string, title: string, onClick: () => void): HTM
   return btn;
 }
 
-/** Rules · language · theme toggles (shown on the home screen before joining). */
+/** Rules · sound · language · theme toggles (home screen, before joining). */
 export function controls(): HTMLElement {
   const lang = getLang();
   const theme = getTheme();
+  const muted = getMuted();
   return el(
     'div',
     { class: 'row', style: { gap: '8px' } },
     rulesButton(),
+    iconButton(muted ? ICON.soundOff : ICON.soundOn, t('sound'), () => {
+      setMuted(!getMuted());
+      setState({});
+    }),
     el(
       'button',
       {
@@ -94,6 +100,11 @@ function paintCountdown(span: HTMLElement): void {
   const left = Math.max(0, Math.ceil((ends - Date.now()) / 1000));
   span.textContent = `${left}s`;
   span.classList.toggle('crit', left <= 5);
+  // soft tick once per second over the final stretch (de-duped via dataset)
+  if (left > 0 && left <= 5 && span.dataset.lastsec !== String(left)) {
+    sTick(left <= 3);
+  }
+  span.dataset.lastsec = String(left);
 }
 
 function paintBar(bar: HTMLElement): void {

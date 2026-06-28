@@ -10,6 +10,7 @@ import { renderBuild } from './screens/build';
 import { renderVote } from './screens/vote';
 import { renderResult } from './screens/result';
 import { renderRecap } from './screens/recap';
+import { sPhase } from './sound';
 
 const screens: Record<Screen, () => HTMLElement> = {
   HOME: renderHome,
@@ -77,9 +78,12 @@ export function startRender(root: HTMLElement): void {
     if (key === lastKey) return;
     lastKey = key;
     const node = screens[state.screen]();
-    // Entrance animations play only when the screen (phase) actually changes —
-    // not on same-screen data updates like a player joining the lobby.
-    if (state.screen !== lastScreen) node.classList.add('enter');
+    // Entrance animations + a phase sound cue play only when the screen (phase)
+    // actually changes — not on same-screen data updates like a player joining.
+    if (state.screen !== lastScreen) {
+      node.classList.add('enter');
+      if (lastScreen !== '') sPhase(state.screen); // skip the initial mount
+    }
     lastScreen = state.screen;
     root.replaceChildren(node);
     window.scrollTo(0, 0);

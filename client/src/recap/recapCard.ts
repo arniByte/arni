@@ -9,34 +9,34 @@ import { t, votesWord, getTheme } from '../i18n';
 
 const THEMES = {
   dark: {
-    paper: '#120D11',
-    surface: '#1A1318',
-    ink: '#EAE7E9',
-    dim: '#807580',
-    cyan: '#E89BB5',
-    steel: '#C89AAC',
+    paper: '#100B13',
+    surface: '#191118',
+    ink: '#ECE7EC',
+    dim: '#938795',
+    cyan: '#FF58C0',
+    steel: '#CF8FC0',
     lime: '#D7F25A',
-    grid: 'rgba(232,155,181,0.06)',
-    hair: 'rgba(232,155,181,0.16)',
-    qrDark: '#EAE7E9',
-    qrLight: '#120D11',
+    grid: 'rgba(255,120,205,0.06)',
+    hair: 'rgba(255,120,205,0.16)',
+    qrDark: '#ECE7EC',
+    qrLight: '#100B13',
   },
   light: {
-    paper: '#F7F5F7',
+    paper: '#F7F4F8',
     surface: '#FFFFFF',
-    ink: '#2A222A',
-    dim: '#847480',
-    cyan: '#CB6386',
-    steel: '#B07B94',
+    ink: '#241F29',
+    dim: '#6F6573',
+    cyan: '#D11589',
+    steel: '#955882',
     lime: '#A9C400',
-    grid: 'rgba(203,99,134,0.05)',
-    hair: 'rgba(203,99,134,0.16)',
-    qrDark: '#2A222A',
+    grid: 'rgba(60,24,50,0.05)',
+    hair: 'rgba(60,24,50,0.16)',
+    qrDark: '#241F29',
     qrLight: '#FFFFFF',
   },
 };
 const MONO = "'Space Mono', ui-monospace, 'Noto Sans JP', monospace";
-const DISPLAY = "'Inter', 'Noto Sans JP', sans-serif";
+const DISPLAY = "'Unbounded', 'Noto Sans JP', sans-serif";
 
 export function absoluteJoinUrl(recap: RecapPayload): string {
   try {

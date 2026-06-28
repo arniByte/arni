@@ -40,6 +40,7 @@ const RU: Record<string, string> = {
   theirSituationWas: 'его ситуация была',
   impostorCaught: 'ПОЙМАН',
   impostorEvaded: 'УСКОЛЬЗНУЛ',
+  sound: 'ЗВУК',
   // rules modal
   rules: 'ПРАВИЛА',
   rulesTitle: 'КАК ИГРАТЬ',
@@ -146,6 +147,7 @@ const EN: Record<string, string> = {
   theirSituationWas: 'their situation was',
   impostorCaught: 'CAUGHT',
   impostorEvaded: 'GOT AWAY',
+  sound: 'SOUND',
   // rules modal
   rules: 'RULES',
   rulesTitle: 'HOW TO PLAY',
