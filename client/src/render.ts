@@ -70,12 +70,18 @@ function syncToast(): void {
 
 export function startRender(root: HTMLElement): void {
   let lastKey = '';
+  let lastScreen: Screen | '' = '';
   const draw = () => {
     syncToast();
     const key = viewKey(state);
     if (key === lastKey) return;
     lastKey = key;
-    root.replaceChildren(screens[state.screen]());
+    const node = screens[state.screen]();
+    // Entrance animations play only when the screen (phase) actually changes —
+    // not on same-screen data updates like a player joining the lobby.
+    if (state.screen !== lastScreen) node.classList.add('enter');
+    lastScreen = state.screen;
+    root.replaceChildren(node);
     window.scrollTo(0, 0);
   };
   subscribe(draw);

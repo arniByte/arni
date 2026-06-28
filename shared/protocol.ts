@@ -20,7 +20,7 @@ export const TIMERS = {
 
 export const LIMITS = {
   MIN_PLAYERS: 3,
-  MAX_PLAYERS: 12,
+  MAX_PLAYERS: 5,
   MIN_ROUNDS: 3,
   MAX_ROUNDS: 8,
   DEFAULT_ROUNDS: 5,

@@ -511,3 +511,114 @@
   z-index: -1;
   pointer-events: none;
 }
+
+/* ── motion: entrance, mascot, background faces ─────────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes face-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+@keyframes drift {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-16px) rotate(var(--r, 0deg)); }
+}
+
+/* Entrance plays only when the screen (phase) actually changes (.enter is added
+   by render.ts on a real screen switch, not on same-screen data updates). */
+.screen.enter > * {
+  animation: rise 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.screen.enter > *:nth-child(1) { animation-delay: 0s; }
+.screen.enter > *:nth-child(2) { animation-delay: 0.05s; }
+.screen.enter > *:nth-child(3) { animation-delay: 0.1s; }
+.screen.enter > *:nth-child(4) { animation-delay: 0.15s; }
+.screen.enter > *:nth-child(5) { animation-delay: 0.2s; }
+.screen.enter > *:nth-child(n + 6) { animation-delay: 0.24s; }
+.screen.enter > .bg-faces { animation: none; }
+
+.screen.enter .vote-grid .vote-card {
+  animation: pop 0.34s ease both;
+}
+.screen.enter .vote-grid .vote-card:nth-child(2) { animation-delay: 0.04s; }
+.screen.enter .vote-grid .vote-card:nth-child(3) { animation-delay: 0.08s; }
+.screen.enter .vote-grid .vote-card:nth-child(4) { animation-delay: 0.12s; }
+.screen.enter .vote-grid .vote-card:nth-child(n + 5) { animation-delay: 0.16s; }
+
+.screen.enter .face-preview {
+  animation: pop 0.4s ease both;
+}
+
+/* animated mascot (home) */
+.mascot-wrap {
+  display: grid;
+  place-items: center;
+  animation: face-breathe 4.5s ease-in-out infinite;
+}
+.mascot-face {
+  font-family: var(--mono);
+  font-size: clamp(54px, 16vw, 116px);
+  line-height: 1.1;
+  color: var(--cyan);
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.38s ease;
+  letter-spacing: 0.02em;
+}
+
+/* decorative background scatter of ASCII faces (menu) */
+.bg-faces {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  color: var(--cyan);
+  opacity: 0.08;
+}
+.bg-face {
+  position: absolute;
+  font-family: var(--mono);
+  white-space: nowrap;
+  transform: rotate(var(--r, 0deg));
+  animation-name: drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.screen.home {
+  position: relative;
+}
+.screen.home > *:not(.bg-faces) {
+  position: relative;
+  z-index: 1;
+}
+
+/* press feedback on buttons */
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* narrow-screen safeguard for the face constructor slots */
+@media (max-width: 340px) {
+  .slots { gap: 5px; }
+  .slot { min-height: 50px; padding: 10px 2px; }
+}
+
+/* accessibility: honor reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .screen.enter > *,
+  .screen.enter .vote-grid .vote-card,
+  .screen.enter .face-preview,
+  .mascot-wrap,
+  .bg-face {
+    animation: none !important;
+  }
+  .mascot-face { transition: none !important; }
+}
