@@ -9,6 +9,27 @@ export function renderResult(): HTMLElement {
   const room = state.room!;
   const ranked = result?.ranked ?? [];
   const board = result?.scoreboard ?? [];
+  const isImp = room.settings.mode === 'IMPOSTOR';
+  const imp = result?.impostor;
+
+  // IMPOSTOR mode: reveal who it was, their face, decoy situation, caught or not.
+  const impostorPanel =
+    isImp && imp
+      ? el(
+          'div',
+          { class: 'panel stack center' },
+          el('span', { class: 'label' }, t('theImpostorWas')),
+          el('div', { class: 'face-preview' }, imp.glyphs),
+          el('div', { class: 'display lg' }, `@${imp.handle}`),
+          el(
+            'div',
+            { class: 'row', style: { justifyContent: 'center', gap: '10px' } },
+            el('span', { class: 'tag ' + (imp.caught ? 'perfect' : 'impostor') }, imp.caught ? t('impostorCaught') : t('impostorEvaded')),
+            el('span', { class: 'dim' }, `${imp.votes} ${votesWord(imp.votes)}`),
+          ),
+          el('div', { class: 'hint center' }, `${t('theirSituationWas')}: ${imp.decoySituation}`),
+        )
+      : null;
 
   const top = ranked[0];
 
@@ -71,8 +92,8 @@ export function renderResult(): HTMLElement {
     { class: 'screen' },
     topbar(roomMeta(room.code, t('phaseResult') + ' ·')),
     el('div', { class: 'situation' }, result?.situation ?? ''),
-    winnerPanel,
-    rest,
+    isImp ? impostorPanel : winnerPanel,
+    isImp ? null : rest,
     scoreboard,
     el('div', { class: 'hint center' }, t('nextRound')),
   );

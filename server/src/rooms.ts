@@ -56,6 +56,8 @@ export interface Room {
 
   // per-round transient state
   situation: string;
+  decoySituation: string; // IMPOSTOR mode: the impostor's different situation
+  impostorId: string | null; // IMPOSTOR mode: who is the impostor this round
   usedSituations: Set<string>;
   submissions: Map<string, Submission>; // authorId -> submission
   facesById: Map<string, Submission>; // faceId -> submission
@@ -105,6 +107,7 @@ export function clampSettings(patch: Partial<Settings> | undefined, base: Settin
     rounds: clamp(patch?.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, base.rounds),
     buildSecs: clamp(patch?.buildSecs, 10, 120, base.buildSecs),
     voteSecs: clamp(patch?.voteSecs, 8, 90, base.voteSecs),
+    mode: patch?.mode === 'IMPOSTOR' || patch?.mode === 'CLASSIC' ? patch.mode : base.mode,
   };
 }
 
@@ -139,6 +142,8 @@ export function createRoom(
     lang: lang === 'en' ? 'en' : 'ru',
     roundIndex: -1,
     situation: '',
+    decoySituation: '',
+    impostorId: null,
     usedSituations: new Set(),
     submissions: new Map(),
     facesById: new Map(),

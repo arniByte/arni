@@ -160,6 +160,7 @@ socket.on('round:start', (p) => {
     mySubmittedGlyphs: null,
     myFaceId: null,
     myVotedFaceId: null,
+    myRole: p.role ?? null,
     screen: 'BUILD',
     error: null,
   });

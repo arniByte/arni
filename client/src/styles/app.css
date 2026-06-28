@@ -555,11 +555,10 @@
   animation: pop 0.4s ease both;
 }
 
-/* animated mascot (home) */
+/* animated mascot (home) — no pulse; the face just swaps quickly */
 .mascot-wrap {
   display: grid;
   place-items: center;
-  animation: face-breathe 4.5s ease-in-out infinite;
 }
 .mascot-face {
   font-family: var(--mono);
@@ -568,7 +567,7 @@
   color: var(--cyan);
   text-align: center;
   white-space: nowrap;
-  transition: opacity 0.38s ease;
+  transition: opacity 0.16s ease;
   letter-spacing: 0.02em;
 }
 
@@ -609,6 +608,26 @@
 @media (max-width: 340px) {
   .slots { gap: 5px; }
   .slot { min-height: 50px; padding: 10px 2px; }
+}
+
+/* ── IMPOSTOR mode ──────────────────────────────────────────────────────────── */
+.btn.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.tag.impostor {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+.impostor-banner {
+  border: 1px solid var(--lime);
+  background: color-mix(in srgb, var(--lime) 16%, transparent);
+  color: var(--ink);
+  border-radius: var(--r);
+  padding: 11px 14px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.04em;
 }
 
 /* accessibility: honor reduced motion */

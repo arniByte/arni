@@ -28,6 +28,7 @@ export interface AppState {
   mySubmittedGlyphs: string | null;
   myFaceId: string | null; // id of my own face during VOTE (server-told, private)
   myVotedFaceId: string | null;
+  myRole: 'impostor' | null; // IMPOSTOR mode: am I the impostor this round?
 }
 
 export const state: AppState = {
@@ -46,6 +47,7 @@ export const state: AppState = {
   mySubmittedGlyphs: null,
   myFaceId: null,
   myVotedFaceId: null,
+  myRole: null,
 };
 
 type Listener = () => void;

@@ -22,8 +22,8 @@ const FACES = [
   '◉‿◉',
 ];
 
-const SWAP_MS = 2600;
-const FADE_MS = 380;
+const SWAP_MS = 1100; // quick changes (no pulse)
+const FADE_MS = 160;
 
 export function animatedMascot(): HTMLElement {
   const face = el('div', { class: 'mascot-face' }, `[ ${FACES[0]} ]`);

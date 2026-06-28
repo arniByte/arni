@@ -32,6 +32,7 @@ export const LIMITS = {
 export const SCORE = {
   PER_VOTE: 100,
   PERFECT_READ_BONUS: 150, // added on top of the per-vote total → 250 when unanimous
+  IMPOSTOR_EVADE: 250, // jackpot for an impostor whose face was NOT the top-accused
 } as const;
 
 // Placeholder face given to players who don't submit in time.
@@ -39,6 +40,9 @@ export const PLACEHOLDER_FACE = '( ¬_¬ )';
 
 // ── Language (situation prompts are room-level) ──────────────────────────────
 export type Lang = 'ru' | 'en';
+
+// ── Game mode (room-level) ───────────────────────────────────────────────────
+export type GameMode = 'CLASSIC' | 'IMPOSTOR';
 
 // ── Phases ───────────────────────────────────────────────────────────────────
 export type Phase = 'LOBBY' | 'BUILD' | 'VOTE' | 'RESULT' | 'END';
@@ -48,12 +52,14 @@ export interface Settings {
   rounds: number; // MIN_ROUNDS..MAX_ROUNDS
   buildSecs: number;
   voteSecs: number;
+  mode: GameMode;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   rounds: LIMITS.DEFAULT_ROUNDS,
   buildSecs: TIMERS.BUILD,
   voteSecs: TIMERS.VOTE,
+  mode: 'CLASSIC',
 };
 
 // ── Public (broadcastable) shapes ────────────────────────────────────────────
@@ -80,6 +86,7 @@ export interface RoundStartPayload {
   total: number;
   situation: string;
   endsAt: number; // epoch ms
+  role?: 'impostor'; // IMPOSTOR mode: present (privately) only for the impostor
 }
 
 export interface VoteFace {
@@ -107,10 +114,22 @@ export interface ScoreRow {
   score: number;
 }
 
+// IMPOSTOR mode reveal, attached to the round result.
+export interface ImpostorReveal {
+  id: string;
+  handle: string;
+  glyphs: string; // the impostor's face
+  faceId: string;
+  decoySituation: string; // the different situation the impostor secretly had
+  caught: boolean; // their face was the (tied) most-accused
+  votes: number; // accusations against the impostor's face
+}
+
 export interface RoundResultPayload {
   situation: string;
   ranked: RankedFace[];
   scoreboard: ScoreRow[];
+  impostor?: ImpostorReveal; // present only in IMPOSTOR mode
 }
 
 export interface RecapRow {

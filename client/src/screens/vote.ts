@@ -9,6 +9,7 @@ export function renderVote(): HTMLElement {
   const vote = state.vote;
   const room = state.room!;
   const faces = vote?.faces ?? [];
+  const isImp = room.settings.mode === 'IMPOSTOR';
 
   const grid = el(
     'div',
@@ -37,7 +38,7 @@ export function renderVote(): HTMLElement {
     el(
       'div',
       { class: 'row spread' },
-      el('span', { class: 'label' }, t('voteTheVibe')),
+      el('span', { class: 'label' }, isImp ? t('findImpostor') : t('voteTheVibe')),
       vote ? countdown(vote.endsAt) : null,
     ),
     vote ? timerbar(vote.endsAt, room.settings.voteSecs) : null,
@@ -53,7 +54,7 @@ export function renderVote(): HTMLElement {
     el(
       'div',
       { class: 'hint center' },
-      state.myVotedFaceId ? t('voteLockedChange') : t('votePick'),
+      state.myVotedFaceId ? t('voteLockedChange') : isImp ? t('votePickImpostor') : t('votePick'),
     ),
   );
 }
