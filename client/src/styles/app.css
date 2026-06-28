@@ -382,7 +382,7 @@
 }
 .tag.you {
   color: var(--cyan);
-  border-color: rgba(127, 233, 224, 0.4);
+  border-color: var(--tick-color);
 }
 .tag.perfect {
   color: var(--lime);
