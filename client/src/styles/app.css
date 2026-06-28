@@ -104,10 +104,15 @@
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
-/* fallback for browsers without backdrop-filter — stay readable */
+/* fallback for browsers without backdrop-filter — keep glass surfaces opaque
+   so the sticky topbar / cards don't let scrolling content bleed through */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .panel {
+  .panel,
+  .vote-card {
     background: var(--surface);
+  }
+  .topbar {
+    background: var(--surface2);
   }
 }
 .panel.flush {
