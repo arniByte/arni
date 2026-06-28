@@ -26,9 +26,9 @@
   padding: 10px 0;
   margin: -16px 0 0;
   border-bottom: 1px solid var(--glass-border);
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  backdrop-filter: blur(14px) saturate(1.3);
+  background: linear-gradient(150deg, var(--glass-top), var(--glass-bot));
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
 }
 
 .brand {
@@ -96,13 +96,13 @@
 /* ── glass panel ─────────────────────────────────────────────────────────────── */
 .panel {
   position: relative;
-  border-radius: var(--r);
-  padding: 16px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  backdrop-filter: blur(14px) saturate(1.3);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(150deg, var(--glass-top), var(--glass-bot));
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
 }
 /* fallback for browsers without backdrop-filter — keep glass surfaces opaque
    so the sticky topbar / cards don't let scrolling content bleed through */
@@ -435,11 +435,11 @@
 .vote-card {
   position: relative;
   border: 1px solid var(--glass-border);
-  border-radius: var(--r);
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  backdrop-filter: blur(10px) saturate(1.2);
-  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+  background: linear-gradient(150deg, var(--glass-top), var(--glass-bot));
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
   min-height: 100px;
   display: grid;
   place-items: center;
@@ -577,13 +577,14 @@
 }
 .mascot-face {
   font-family: var(--mono);
-  font-size: clamp(64px, 17vw, 132px);
+  font-size: clamp(72px, 18vw, 140px);
   line-height: 1.1;
   color: var(--cyan);
   text-align: center;
   white-space: nowrap;
   transition: opacity 0.16s ease;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-shadow: 0 10px 50px rgba(139, 92, 246, 0.45), 0 2px 16px rgba(139, 92, 246, 0.3);
 }
 
 /* decorative background scatter of ASCII faces (menu) */

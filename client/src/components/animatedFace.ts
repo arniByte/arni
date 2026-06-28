@@ -28,7 +28,8 @@ const SWAP_MS = 1100; // quick changes (no pulse)
 const FADE_MS = 160;
 
 export function animatedMascot(): HTMLElement {
-  const face = el('div', { class: 'mascot-face' }, `[ ${FACES[0]} ]`);
+  // Just the face (no giant brackets) — reads cleaner big, with a soft glow.
+  const face = el('div', { class: 'mascot-face' }, FACES[0]);
   let i = 0;
 
   const id = window.setInterval(() => {
@@ -41,7 +42,7 @@ export function animatedMascot(): HTMLElement {
     window.setTimeout(() => {
       if (!document.contains(face)) return;
       i = (i + 1) % FACES.length;
-      face.textContent = `[ ${FACES[i]} ]`;
+      face.textContent = FACES[i];
       face.style.opacity = '1';
     }, FADE_MS);
   }, SWAP_MS);

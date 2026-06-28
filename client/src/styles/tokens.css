@@ -22,10 +22,16 @@
   --on-accent: #ffffff;
   --accent-soft: rgba(139, 92, 246, 0.1);
   --tick-color: rgba(139, 92, 246, 0.45);
-  /* glassmorphism */
-  --glass: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(28, 46, 72, 0.1);
-  --glass-shadow: 0 10px 30px rgba(28, 46, 72, 0.08);
+  /* glassmorphism — frosted gradient + bright top highlight */
+  --glass-top: rgba(255, 255, 255, 0.55);
+  --glass-bot: rgba(255, 255, 255, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-hi: rgba(255, 255, 255, 0.65);
+  --glass-shadow: 0 14px 44px rgba(76, 29, 149, 0.16);
+  /* aurora light-blobs behind the glass (so there's color to frost) */
+  --aura-1: rgba(139, 92, 246, 0.42);
+  --aura-2: rgba(236, 72, 153, 0.28);
+  --aura-3: rgba(56, 189, 248, 0.24);
 }
 
 :root[data-theme='dark'] {
@@ -44,9 +50,14 @@
   --on-accent: #0b0d14;
   --accent-soft: rgba(183, 166, 255, 0.12);
   --tick-color: rgba(183, 166, 255, 0.4);
-  --glass: rgba(18, 22, 33, 0.55);
-  --glass-border: rgba(183, 166, 255, 0.14);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --glass-top: rgba(42, 40, 66, 0.55);
+  --glass-bot: rgba(20, 19, 34, 0.28);
+  --glass-border: rgba(183, 166, 255, 0.22);
+  --glass-hi: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+  --aura-1: rgba(139, 92, 246, 0.36);
+  --aura-2: rgba(99, 102, 241, 0.32);
+  --aura-3: rgba(168, 85, 247, 0.24);
 }
 
 :root {
@@ -84,6 +95,57 @@ body {
   text-rendering: optimizeLegibility;
   overscroll-behavior: none;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ── aurora: soft drifting color blobs behind everything (fixed, z-index:-1) ──── */
+/* These give the frosted-glass panels real color to blur — the key to the look. */
+body::before,
+body::after,
+#app::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  will-change: transform;
+}
+body::before {
+  top: -22vmax;
+  left: -16vmax;
+  width: 62vmax;
+  height: 62vmax;
+  background: radial-gradient(circle at center, var(--aura-1), transparent 66%);
+  animation: aura-a 30s ease-in-out infinite alternate;
+}
+body::after {
+  bottom: -24vmax;
+  right: -18vmax;
+  width: 66vmax;
+  height: 66vmax;
+  background: radial-gradient(circle at center, var(--aura-2), transparent 66%);
+  animation: aura-b 36s ease-in-out infinite alternate;
+}
+#app::before {
+  top: 18vmax;
+  right: -22vmax;
+  width: 52vmax;
+  height: 52vmax;
+  background: radial-gradient(circle at center, var(--aura-3), transparent 66%);
+  animation: aura-c 42s ease-in-out infinite alternate;
+}
+@keyframes aura-a {
+  to { transform: translate(9vmax, 7vmax); }
+}
+@keyframes aura-b {
+  to { transform: translate(-8vmax, -6vmax); }
+}
+@keyframes aura-c {
+  to { transform: translate(-6vmax, 9vmax); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after,
+  #app::before { animation: none; }
 }
 
 #app {
