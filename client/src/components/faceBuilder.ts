@@ -8,8 +8,6 @@ import {
   EYES,
   MOUTHS,
   SIDES,
-  LBR,
-  RBR,
   ARMS,
   PRESETS,
   assemble,
@@ -21,11 +19,10 @@ import {
 const randInt = (n: number) => Math.floor(Math.random() * n);
 
 interface BuilderState {
-  lbr: number;
+  side: number; // index into SIDES — both brackets cycle together as a pair
   le: number;
   m: number;
   re: number;
-  rbr: number;
   arm: number; // -1 = none
   free: string | null; // free-type / preset override; null = use slots
   locked: boolean;
@@ -36,16 +33,16 @@ interface BuilderState {
  * after that the builder locks itself into a confirmation state.
  */
 export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLElement {
-  const st: BuilderState = { lbr: 0, le: 1, m: 0, re: 1, rbr: 0, arm: -1, free: null, locked: false };
+  const st: BuilderState = { side: 0, le: 1, m: 0, re: 1, arm: -1, free: null, locked: false };
 
   const preview = facePreview('');
 
   const slotKeys: Array<{ label: string; get: () => string; cycle: () => void }> = [
-    { label: 'BRKT', get: () => LBR[st.lbr] || '·', cycle: () => bump('lbr', LBR.length) },
+    { label: 'BRKT', get: () => SIDES[st.side][0] || '·', cycle: bumpSide },
     { label: 'EYE', get: () => EYES[st.le], cycle: () => bump('le', EYES.length) },
     { label: 'MOUTH', get: () => MOUTHS[st.m], cycle: () => bump('m', MOUTHS.length) },
     { label: 'EYE', get: () => EYES[st.re], cycle: () => bump('re', EYES.length) },
-    { label: 'BRKT', get: () => RBR[st.rbr] || '·', cycle: () => bump('rbr', RBR.length) },
+    { label: 'BRKT', get: () => SIDES[st.side][1] || '·', cycle: bumpSide },
   ];
 
   const slotBtns = slotKeys.map((s) =>
@@ -108,9 +105,16 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
   const root = el('div', { class: 'stack' }, body);
 
   // ── state ops ───────────────────────────────────────────────────────────────
-  function bump(key: 'lbr' | 'le' | 'm' | 're' | 'rbr', len: number): void {
+  function bump(key: 'le' | 'm' | 're', len: number): void {
     st.free = null;
     st[key] = (st[key] + 1) % len;
+    refresh();
+  }
+
+  function bumpSide(): void {
+    // Both bracket slots advance together so the pair always matches.
+    st.free = null;
+    st.side = (st.side + 1) % SIDES.length;
     refresh();
   }
 
@@ -127,9 +131,7 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
 
   function roll(): void {
     st.free = null;
-    const sideIdx = randInt(SIDES.length);
-    st.lbr = sideIdx;
-    st.rbr = sideIdx;
+    st.side = randInt(SIDES.length);
     st.le = randInt(EYES.length);
     st.m = randInt(MOUTHS.length);
     st.re = randInt(EYES.length);
@@ -150,11 +152,11 @@ export function createFaceBuilder(onSubmit: (glyphs: string) => void): HTMLEleme
   function current(): string {
     if (st.free != null) return st.free;
     return assemble({
-      lbr: LBR[st.lbr],
+      lbr: SIDES[st.side][0],
       le: EYES[st.le],
       mouth: MOUTHS[st.m],
       re: EYES[st.re],
-      rbr: RBR[st.rbr],
+      rbr: SIDES[st.side][1],
       arm: st.arm >= 0 ? ARMS[st.arm] : null,
     });
   }

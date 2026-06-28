@@ -64,9 +64,8 @@ export function renderHome(): HTMLElement {
 
     el(
       'div',
-      { class: 'stack center', style: { marginTop: '4vh', gap: '14px' } },
+      { class: 'stack center', style: { marginTop: '5vh' } },
       animatedMascot(),
-      el('span', { class: 'chip lime', style: { alignSelf: 'center' } }, t('tagline')),
     ),
 
     el(

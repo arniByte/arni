@@ -1,27 +1,31 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    KAO // 顔 — design tokens + base reset.
    Default = a soft, easy-on-the-eyes LIGHT theme. [data-theme="dark"] = the
-   original cold terminal look. Accent = indigo / violet.
+   original cold terminal look. Accent = amethyst violet.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root,
 :root[data-theme='light'] {
-  /* LIGHT (default) — soft near-white, slate ink, indigo accent */
-  --paper: #f5f7fa; /* page bg (soft cool white, gentler than pure #fff) */
-  --surface: #ffffff; /* cards / inputs */
+  /* LIGHT (default) — soft near-white, slate ink, amethyst accent */
+  --paper: #f5f7fa; /* page bg */
+  --surface: #ffffff; /* solid cards / inputs */
   --surface2: #eef1f6; /* raised */
-  --ink: #1c2230; /* primary text (slate, not harsh black) */
+  --ink: #1c2230; /* primary text */
   --dim: #6c7484; /* secondary / labels */
-  --cyan: #5b5bd6; /* primary accent (indigo) */
-  --steel: #6e72c7; /* secondary accent (periwinkle) */
-  --lime: #d7f25a; /* HIGHLIGHT fill — dark text on it; use ~1 element/screen */
-  --acc-red: #e23b30; /* danger / timer-critical only */
-  --grid: rgba(28, 46, 72, 0.05); /* faint FUI grid */
+  --cyan: #8b5cf6; /* primary accent (amethyst) */
+  --steel: #8a82cf; /* secondary accent */
+  --lime: #d7f25a; /* HIGHLIGHT fill */
+  --acc-red: #e23b30;
+  --grid: rgba(28, 46, 72, 0.05);
   --hairline: rgba(28, 46, 72, 0.16);
   --hairline-dim: rgba(28, 40, 60, 0.09);
-  --on-accent: #ffffff; /* text on a solid indigo button */
-  --accent-soft: rgba(91, 91, 214, 0.1); /* selected/picked surface */
-  --tick-color: rgba(91, 91, 214, 0.45); /* panel corner ticks */
+  --on-accent: #ffffff;
+  --accent-soft: rgba(139, 92, 246, 0.1);
+  --tick-color: rgba(139, 92, 246, 0.45);
+  /* glassmorphism */
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(28, 46, 72, 0.1);
+  --glass-shadow: 0 10px 30px rgba(28, 46, 72, 0.08);
 }
 
 :root[data-theme='dark'] {
@@ -30,32 +34,32 @@
   --surface2: #161a26;
   --ink: #eaeae7;
   --dim: #737580;
-  --cyan: #a8a4ff; /* indigo, lifted for dark bg */
-  --steel: #9c9ae0;
+  --cyan: #b7a6ff;
+  --steel: #a59ee8;
   --lime: #d7f25a;
   --acc-red: #ff3b30;
-  --grid: rgba(168, 164, 255, 0.06);
-  --hairline: rgba(168, 164, 255, 0.14);
+  --grid: rgba(183, 166, 255, 0.06);
+  --hairline: rgba(183, 166, 255, 0.14);
   --hairline-dim: rgba(234, 234, 231, 0.08);
   --on-accent: #0b0d14;
-  --accent-soft: rgba(168, 164, 255, 0.12);
-  --tick-color: rgba(168, 164, 255, 0.4);
+  --accent-soft: rgba(183, 166, 255, 0.12);
+  --tick-color: rgba(183, 166, 255, 0.4);
+  --glass: rgba(18, 22, 33, 0.55);
+  --glass-border: rgba(183, 166, 255, 0.14);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 :root {
-  /* type */
   --mono: ui-monospace, "Space Mono", "JetBrains Mono", "Noto Sans JP", monospace;
   --display: "Inter", "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
-
-  /* spacing / shape */
-  --r: 10px;
-  --tick: 9px; /* corner tick length */
+  --r: 14px;
   --gap: 14px;
   --maxw: 720px;
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* no blue flash on tap (mobile) */
 }
 
 html,
@@ -97,6 +101,17 @@ button {
 input,
 select {
   font-family: var(--mono);
+}
+
+/* hide the default focus ring on tap; show a clean accent ring for keyboard nav */
+button:focus,
+input:focus {
+  outline: none;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
 }
 
 ::selection {
