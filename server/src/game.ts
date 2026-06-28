@@ -13,6 +13,7 @@ import {
   type RankedFace,
   type ScoreRow,
   type RoundResultPayload,
+  type ImpostorReveal,
   type MatchEndPayload,
   type RecapPayload,
 } from '../../shared/protocol';
@@ -99,6 +100,8 @@ function resetRoundState(room: Room): void {
   room.submissions.clear();
   room.facesById.clear();
   room.votes.clear();
+  room.impostorId = null;
+  room.decoySituation = '';
 }
 
 function beginBuild(io: IO, room: Room): void {
@@ -110,12 +113,33 @@ function beginBuild(io: IO, room: Room): void {
   room.endsAt = now() + room.settings.buildSecs * 1000;
 
   broadcastState(io, room);
-  io.to(room.code).emit('round:start', {
-    index: room.roundIndex + 1,
-    total: room.settings.rounds,
-    situation: room.situation,
-    endsAt: room.endsAt,
-  });
+
+  if (room.settings.mode === 'IMPOSTOR') {
+    // A different (decoy) situation + one random connected impostor. The round
+    // is delivered PER-PLAYER: only the impostor secretly gets the decoy + role.
+    room.decoySituation = pickSituation(room);
+    const connected = [...room.players.values()].filter((p) => p.connected);
+    const impostor = connected.length ? connected[Math.floor(Math.random() * connected.length)] : null;
+    room.impostorId = impostor ? impostor.id : null;
+    for (const p of room.players.values()) {
+      if (!p.socketId) continue;
+      const isImp = p.id === room.impostorId;
+      io.to(p.socketId).emit('round:start', {
+        index: room.roundIndex + 1,
+        total: room.settings.rounds,
+        situation: isImp ? room.decoySituation : room.situation,
+        endsAt: room.endsAt,
+        role: isImp ? 'impostor' : undefined,
+      });
+    }
+  } else {
+    io.to(room.code).emit('round:start', {
+      index: room.roundIndex + 1,
+      total: room.settings.rounds,
+      situation: room.situation,
+      endsAt: room.endsAt,
+    });
+  }
 
   room.phaseTimer = setTimeout(() => beginVote(io, room), room.settings.buildSecs * 1000);
 }
@@ -222,63 +246,107 @@ function finishRound(io: IO, room: Room): void {
   clearPhaseTimer(room);
   room.phase = 'RESULT';
 
-  // Tally votes per face.
+  const isImpostor = room.settings.mode === 'IMPOSTOR';
+
+  // Tally votes per face (shared by both modes).
   const tally = new Map<string, number>();
   for (const faceId of room.votes.values()) {
     tally.set(faceId, (tally.get(faceId) ?? 0) + 1);
   }
-
   const totalVoters = room.votes.size;
   const distinctFacesVotedFor = new Set(room.votes.values()).size;
+  const maxVotes = tally.size ? Math.max(...tally.values()) : 0;
 
-  // Build ranked list across all faces.
   const ranked: RankedFace[] = [...room.facesById.values()].map((sub) => {
     const votes = tally.get(sub.faceId) ?? 0;
-    // Perfect read: every voter (>=2) converged on this single face.
+    // Perfect read only applies to CLASSIC (best-face) voting.
     const perfectRead =
-      totalVoters >= 2 && distinctFacesVotedFor === 1 && votes === totalVoters;
-    return {
-      id: sub.faceId,
-      glyphs: sub.glyphs,
-      handle: sub.authorHandle,
-      votes,
-      perfectRead,
-    };
+      !isImpostor && totalVoters >= 2 && distinctFacesVotedFor === 1 && votes === totalVoters;
+    return { id: sub.faceId, glyphs: sub.glyphs, handle: sub.authorHandle, votes, perfectRead };
   });
   ranked.sort((a, b) => b.votes - a.votes);
 
-  // Apply scores.
-  for (const r of ranked) {
-    const sub = room.facesById.get(r.id);
-    if (!sub) continue;
+  // Reveal every face as its author's avatar now that voting is over (both modes).
+  for (const sub of room.facesById.values()) {
     const author = room.players.get(sub.authorId);
-    if (!author) continue;
-    let gained = r.votes * SCORE.PER_VOTE;
-    if (r.perfectRead) gained += SCORE.PERFECT_READ_BONUS;
-    author.score += gained;
-    if (r.votes > author.bestRoundVotes) author.bestRoundVotes = r.votes;
-    // Reveal the face as the player's avatar now that voting is over.
-    author.faceAvatar = r.glyphs;
+    if (author) author.faceAvatar = sub.glyphs;
   }
 
-  // Record the round winner for the recap (skip if nobody voted at all).
-  const winner = ranked[0];
-  if (winner && winner.votes > 0) {
-    room.recapRounds.push({
-      situation: room.situation,
-      glyphs: winner.glyphs,
-      handle: winner.handle,
-      votes: winner.votes,
-    });
+  let impostorReveal: ImpostorReveal | undefined;
+
+  if (isImpostor) {
+    const impSub = room.impostorId
+      ? [...room.facesById.values()].find((s) => s.authorId === room.impostorId)
+      : undefined;
+    const impVotes = impSub ? tally.get(impSub.faceId) ?? 0 : 0;
+    const caught = !!impSub && maxVotes > 0 && impVotes === maxVotes;
+    const impPlayer = room.impostorId ? room.players.get(room.impostorId) : undefined;
+
+    if (caught && impSub) {
+      // Detectives who accused the impostor's face each score.
+      for (const [voterId, faceId] of room.votes) {
+        if (faceId === impSub.faceId) {
+          const voter = room.players.get(voterId);
+          if (voter) {
+            voter.score += SCORE.PER_VOTE;
+            voter.bestRoundVotes = Math.max(voter.bestRoundVotes, 1);
+          }
+        }
+      }
+    } else if (impPlayer) {
+      impPlayer.score += SCORE.IMPOSTOR_EVADE; // jackpot for slipping past
+    }
+
+    // Build the reveal from the submission snapshot (authorId/authorHandle) so
+    // it survives even if the impostor left mid-round (the +250 evade above is
+    // the only thing that needs a still-present player).
+    if (impSub) {
+      impostorReveal = {
+        id: impSub.authorId,
+        handle: impSub.authorHandle,
+        glyphs: impSub.glyphs,
+        faceId: impSub.faceId,
+        decoySituation: room.decoySituation,
+        caught,
+        votes: impVotes,
+      };
+      room.recapRounds.push({
+        situation: room.situation,
+        glyphs: impSub.glyphs,
+        handle: impSub.authorHandle,
+        votes: impVotes,
+      });
+    }
+  } else {
+    // CLASSIC: +100 per vote, perfect-read bonus.
+    for (const r of ranked) {
+      const sub = room.facesById.get(r.id);
+      if (!sub) continue;
+      const author = room.players.get(sub.authorId);
+      if (!author) continue;
+      let gained = r.votes * SCORE.PER_VOTE;
+      if (r.perfectRead) gained += SCORE.PERFECT_READ_BONUS;
+      author.score += gained;
+      if (r.votes > author.bestRoundVotes) author.bestRoundVotes = r.votes;
+    }
+    const winner = ranked[0];
+    if (winner && winner.votes > 0) {
+      room.recapRounds.push({
+        situation: room.situation,
+        glyphs: winner.glyphs,
+        handle: winner.handle,
+        votes: winner.votes,
+      });
+    }
   }
 
   const scoreboard = buildScoreboard(room);
-
   broadcastState(io, room);
   const payload: RoundResultPayload = {
     situation: room.situation,
     ranked,
     scoreboard,
+    impostor: impostorReveal,
   };
   room.lastResult = payload;
   io.to(room.code).emit('round:result', payload);
@@ -341,11 +409,15 @@ export function snapshotTo(io: IO, room: Room, socketId: string): void {
   const to = io.to(socketId);
   switch (room.phase) {
     case 'BUILD': {
+      // In IMPOSTOR mode the reconnecting player must get THEIR situation + role.
+      const me = [...room.players.values()].find((p) => p.socketId === socketId);
+      const isImp = room.settings.mode === 'IMPOSTOR' && !!me && me.id === room.impostorId;
       to.emit('round:start', {
         index: room.roundIndex + 1,
         total: room.settings.rounds,
-        situation: room.situation,
+        situation: isImp ? room.decoySituation : room.situation,
         endsAt: room.endsAt,
+        role: isImp ? 'impostor' : undefined,
       });
       // If this player already locked a face this round, restore it (the
       // round:start above reset the client's per-round flags first).

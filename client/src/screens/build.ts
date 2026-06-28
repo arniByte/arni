@@ -36,5 +36,8 @@ export function renderBuild(): HTMLElement {
         )
       : createFaceBuilder((glyphs) => actions.submitFace(glyphs));
 
-  return el('main', { class: 'screen' }, topbar(roomMeta(room.code, t('phaseBuild') + ' ·')), header, body);
+  const banner =
+    state.myRole === 'impostor' ? el('div', { class: 'impostor-banner' }, t('impostorBanner')) : null;
+
+  return el('main', { class: 'screen' }, topbar(roomMeta(room.code, t('phaseBuild') + ' ·')), banner, header, body);
 }

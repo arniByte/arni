@@ -26,7 +26,7 @@ function viewKey(s: AppState): string {
     case 'BUILD':
       // Rebuild on a new round, or when our submitted-state flips (submit /
       // reconnect-restore) — both preserve the face builder's local state otherwise.
-      return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}|${i18n}`;
+      return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}|${s.myRole ?? ''}|${i18n}`;
     case 'VOTE':
       return `VOTE|${s.round?.index ?? 0}|${s.myFaceId ?? ''}|${s.myVotedFaceId ?? ''}|${i18n}`;
     default: {
@@ -35,7 +35,7 @@ function viewKey(s: AppState): string {
           .map((p) => `${p.id}:${p.handle}:${p.score}:${p.connected ? 1 : 0}:${p.faceAvatar ?? ''}`)
           .join(',') ?? '';
       const settings = s.room
-        ? `${s.room.settings.rounds}-${s.room.settings.buildSecs}-${s.room.settings.voteSecs}`
+        ? `${s.room.settings.rounds}-${s.room.settings.buildSecs}-${s.room.settings.voteSecs}-${s.room.settings.mode}`
         : '';
       return [s.screen, players, settings, s.room?.host ?? '', s.result?.situation ?? '', s.matchEnd ? 1 : 0, i18n].join('|');
     }

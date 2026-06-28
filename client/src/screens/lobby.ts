@@ -49,10 +49,31 @@ export function renderLobby(): HTMLElement {
     ),
   );
 
+  const mode = room.settings.mode ?? 'CLASSIC';
+  const modeBtn = (m: 'CLASSIC' | 'IMPOSTOR', label: string) =>
+    el(
+      'button',
+      {
+        class: 'btn sm' + (mode === m ? ' active' : ''),
+        type: 'button',
+        disabled: !isHost(),
+        onClick: () => actions.updateSettings({ mode: m }),
+      },
+      label,
+    );
+  const modeRow = el(
+    'div',
+    { class: 'row spread' },
+    el('span', { class: 'label' }, t('gameMode')),
+    el('div', { class: 'row', style: { gap: '8px' } }, modeBtn('CLASSIC', t('modeClassic')), modeBtn('IMPOSTOR', t('modeImpostor'))),
+  );
+
   const settings = el(
     'div',
     { class: 'panel stack' },
     el('span', { class: 'label' }, t('settings')),
+    modeRow,
+    mode === 'IMPOSTOR' ? el('div', { class: 'hint', style: { marginTop: '-4px' } }, t('impostorLobbyHint')) : null,
     stepper(t('rounds'), room.settings.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, (v) => actions.updateSettings({ rounds: v })),
     stepper(t('buildSecs'), room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
     stepper(t('voteSecs'), room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
