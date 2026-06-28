@@ -1,63 +1,65 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    KAO // 顔 — design tokens + base reset.
-   Default = a soft, easy-on-the-eyes LIGHT theme. [data-theme="dark"] = the
-   original cold terminal look. Accent = amethyst violet.
+   Default = a soft, easy-on-the-eyes LIGHT theme. [data-theme="dark"] = a warm
+   low-light variant. Accent = dusty rose-pink.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root,
 :root[data-theme='light'] {
-  /* LIGHT (default) — soft near-white, slate ink, amethyst accent */
-  --paper: #f5f7fa; /* page bg */
+  /* LIGHT (default) — soft near-white, slate ink, dusty rose-pink accent */
+  --paper: #f7f5f7; /* page bg (faintly warm) */
   --surface: #ffffff; /* solid cards / inputs */
-  --surface2: #eef1f6; /* raised */
-  --ink: #1c2230; /* primary text */
-  --dim: #6c7484; /* secondary / labels */
-  --cyan: #8b5cf6; /* primary accent (amethyst) */
-  --steel: #8a82cf; /* secondary accent */
+  --surface2: #f3eef1; /* raised */
+  --ink: #2a222a; /* primary text */
+  --dim: #736572; /* secondary / labels (AA on white + paper) */
+  --cyan: #cb6386; /* primary accent — fills, buttons, mascot (dusty rose-pink) */
+  --accent-text: #b04f72; /* accent used as small TEXT — deeper, clears AA */
+  --steel: #8e5c6f; /* secondary accent (muted mauve-rose, AA) */
   --lime: #d7f25a; /* HIGHLIGHT fill */
   --acc-red: #e23b30;
-  --grid: rgba(28, 46, 72, 0.05);
-  --hairline: rgba(28, 46, 72, 0.16);
-  --hairline-dim: rgba(28, 40, 60, 0.09);
+  --grid: rgba(72, 28, 50, 0.05);
+  --hairline: rgba(72, 28, 50, 0.16);
+  --hairline-dim: rgba(60, 28, 46, 0.09);
   --on-accent: #ffffff;
-  --accent-soft: rgba(139, 92, 246, 0.1);
-  --tick-color: rgba(139, 92, 246, 0.45);
+  --accent-soft: rgba(203, 99, 134, 0.1);
+  --tick-color: rgba(203, 99, 134, 0.45);
   /* glassmorphism — frosted gradient + bright top highlight */
   --glass-top: rgba(255, 255, 255, 0.55);
   --glass-bot: rgba(255, 255, 255, 0.2);
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-hi: rgba(255, 255, 255, 0.65);
-  --glass-shadow: 0 14px 44px rgba(76, 29, 149, 0.16);
+  --glass-shadow: 0 14px 44px rgba(149, 56, 90, 0.16);
   /* aurora light-blobs behind the glass (so there's color to frost) */
-  --aura-1: rgba(139, 92, 246, 0.42);
-  --aura-2: rgba(236, 72, 153, 0.28);
-  --aura-3: rgba(56, 189, 248, 0.24);
+  --aura-1: rgba(203, 99, 134, 0.4); /* dusty rose */
+  --aura-2: rgba(236, 142, 178, 0.3); /* soft pink */
+  --aura-3: rgba(245, 197, 160, 0.24); /* warm peach */
 }
 
 :root[data-theme='dark'] {
-  --paper: #0b0d14;
-  --surface: #10131c;
-  --surface2: #161a26;
-  --ink: #eaeae7;
-  --dim: #737580;
-  --cyan: #b7a6ff;
-  --steel: #a59ee8;
+  --paper: #120d11;
+  --surface: #1a1318;
+  --surface2: #221a20;
+  --ink: #eae7e9;
+  --dim: #8f8490; /* AA on dark surfaces */
+  --cyan: #e89bb5; /* soft dusty pink (light enough on dark) */
+  --accent-text: #e89bb5; /* accent text already clears AA on dark */
+  --steel: #c89aac; /* muted rose */
   --lime: #d7f25a;
   --acc-red: #ff3b30;
-  --grid: rgba(183, 166, 255, 0.06);
-  --hairline: rgba(183, 166, 255, 0.14);
-  --hairline-dim: rgba(234, 234, 231, 0.08);
-  --on-accent: #0b0d14;
-  --accent-soft: rgba(183, 166, 255, 0.12);
-  --tick-color: rgba(183, 166, 255, 0.4);
-  --glass-top: rgba(42, 40, 66, 0.55);
-  --glass-bot: rgba(20, 19, 34, 0.28);
-  --glass-border: rgba(183, 166, 255, 0.22);
+  --grid: rgba(232, 155, 181, 0.06);
+  --hairline: rgba(232, 155, 181, 0.14);
+  --hairline-dim: rgba(234, 231, 233, 0.08);
+  --on-accent: #1a1318;
+  --accent-soft: rgba(232, 155, 181, 0.12);
+  --tick-color: rgba(232, 155, 181, 0.4);
+  --glass-top: rgba(58, 42, 52, 0.55);
+  --glass-bot: rgba(30, 20, 27, 0.28);
+  --glass-border: rgba(232, 155, 181, 0.22);
   --glass-hi: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
-  --aura-1: rgba(139, 92, 246, 0.36);
-  --aura-2: rgba(99, 102, 241, 0.32);
-  --aura-3: rgba(168, 85, 247, 0.24);
+  --aura-1: rgba(203, 99, 134, 0.36); /* rose */
+  --aura-2: rgba(180, 90, 140, 0.32); /* deep pink */
+  --aura-3: rgba(150, 80, 130, 0.24); /* plum-rose */
 }
 
 :root {
