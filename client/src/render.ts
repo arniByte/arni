@@ -10,6 +10,7 @@ import { renderBuild } from './screens/build';
 import { renderVote } from './screens/vote';
 import { renderResult } from './screens/result';
 import { renderRecap } from './screens/recap';
+import { renderBlitzBuild, renderBlitzGuess, renderBlitzResult, renderBlitzRecap } from './screens/blitz';
 import { sPhase } from './sound';
 
 const screens: Record<Screen, () => HTMLElement> = {
@@ -18,7 +19,10 @@ const screens: Record<Screen, () => HTMLElement> = {
   BUILD: renderBuild,
   VOTE: renderVote,
   RESULT: renderResult,
-  RECAP: renderRecap,
+  RECAP: () => (state.blitzEnd ? renderBlitzRecap() : renderRecap()),
+  BLITZ_BUILD: renderBlitzBuild,
+  BLITZ_GUESS: renderBlitzGuess,
+  BLITZ_RESULT: renderBlitzResult,
 };
 
 function viewKey(s: AppState): string {
@@ -30,6 +34,12 @@ function viewKey(s: AppState): string {
       return `BUILD|${s.round?.index ?? 0}|${s.mySubmitted ? 1 : 0}|${s.myRole ?? ''}|${i18n}`;
     case 'VOTE':
       return `VOTE|${s.round?.index ?? 0}|${s.myFaceId ?? ''}|${s.myVotedFaceId ?? ''}|${i18n}`;
+    case 'BLITZ_BUILD':
+      return `BB|${s.blitzRound?.index ?? 0}|${s.mySubmitted ? 1 : 0}|${i18n}`;
+    case 'BLITZ_GUESS':
+      return `BG|${s.blitzRound?.index ?? 0}|${s.myBlitzAnswer ?? ''}|${i18n}`;
+    case 'BLITZ_RESULT':
+      return `BR|${s.blitzResult?.index ?? 0}|${i18n}`;
     default: {
       const players =
         s.room?.players

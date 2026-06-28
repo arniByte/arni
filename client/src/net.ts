@@ -104,6 +104,11 @@ export const actions = {
       vote: null,
       result: null,
       matchEnd: null,
+      blitzRound: null,
+      blitzGuess: null,
+      blitzResult: null,
+      blitzEnd: null,
+      myBlitzAnswer: null,
       mySubmitted: false,
       myVotedFaceId: null,
       myFaceId: null,
@@ -126,6 +131,11 @@ export const actions = {
   castVote(faceId: string): void {
     socket.emit('vote:cast', { faceId });
     setState({ myVotedFaceId: faceId });
+  },
+
+  blitzAnswer(token: number): void {
+    socket.emit('blitz:answer', { token });
+    setState({ myBlitzAnswer: token });
   },
 
   requestRecap(): Promise<RecapPayload | null> {
@@ -185,7 +195,35 @@ socket.on('round:result', (p) => {
 });
 
 socket.on('match:end', (p) => {
-  setState({ matchEnd: p, screen: 'RECAP' });
+  setState({ matchEnd: p, blitzEnd: null, screen: 'RECAP' });
+});
+
+// ── BLITZ (2-player duel) ────────────────────────────────────────────────────
+socket.on('blitz:round', (p) => {
+  setState({
+    blitzRound: p,
+    blitzGuess: null,
+    blitzResult: null,
+    mySubmitted: false,
+    mySubmittedGlyphs: null,
+    myBlitzAnswer: null,
+    screen: 'BLITZ_BUILD',
+    error: null,
+  });
+});
+
+socket.on('blitz:guess', (p) => {
+  // blitz:round resets myBlitzAnswer at round start; on a mid-guess reconnect the
+  // server replays this with lockedToken so we keep the locked selection.
+  setState({ blitzGuess: p, myBlitzAnswer: p.lockedToken ?? null, screen: 'BLITZ_GUESS' });
+});
+
+socket.on('blitz:result', (p) => {
+  setState({ blitzResult: p, screen: 'BLITZ_RESULT' });
+});
+
+socket.on('blitz:end', (p) => {
+  setState({ blitzEnd: p, matchEnd: null, screen: 'RECAP' });
 });
 
 socket.on('player:joined', () => {

@@ -4,6 +4,7 @@ import { topbar, roomMeta } from '../components/ui';
 import { actions } from '../net';
 import { state, isHost, setState } from '../state';
 import { downloadRecap, shareRecap, shareToX, absoluteJoinUrl } from '../recap/recapCard';
+import { reviewButton } from '../components/reviewModal';
 import { t } from '../i18n';
 
 async function withBusy(btn: HTMLButtonElement, label: string, fn: () => Promise<unknown>): Promise<void> {
@@ -84,6 +85,9 @@ export function renderRecap(): HTMLElement {
 
   const actionsRow = el('div', { class: 'row wrap', style: { justifyContent: 'center' } }, dlBtn, shareBtn, xBtn);
 
+  const rounds = end?.rounds ?? [];
+  const reviewBlock = rounds.length ? reviewButton(rounds) : null;
+
   const playAgain = isHost()
     ? el('button', { class: 'btn solid block', type: 'button', onClick: () => actions.startGame() }, t('playAgain'))
     : el('div', { class: 'hint center' }, t('waitingHostNew'));
@@ -94,6 +98,7 @@ export function renderRecap(): HTMLElement {
     topbar(roomMeta(room.code, t('phaseOver') + ' ·')),
     winnerPanel,
     actionsRow,
+    reviewBlock,
     rowsPreview,
     boardPanel,
     playAgain,

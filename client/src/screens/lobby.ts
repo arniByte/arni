@@ -1,7 +1,7 @@
 // LOBBY — room code, live roster, host settings + start.
 import { el } from '../dom';
 import { topbar, roomMeta } from '../components/ui';
-import { LIMITS } from '../../../shared/protocol';
+import { LIMITS, type GameMode } from '../../../shared/protocol';
 import { actions } from '../net';
 import { state, isHost, setState } from '../state';
 import { t } from '../i18n';
@@ -32,7 +32,11 @@ function stepper(label: string, value: number, lo: number, hi: number, onSet: (v
 export function renderLobby(): HTMLElement {
   const room = state.room!;
   const connected = room.players.filter((p) => p.connected).length;
-  const canStart = isHost() && connected >= LIMITS.MIN_PLAYERS;
+  const mode = room.settings.mode ?? 'CLASSIC';
+  const isBlitz = mode === 'BLITZ';
+  const maxP = isBlitz ? 2 : LIMITS.MAX_PLAYERS;
+  const minP = isBlitz ? 2 : LIMITS.MIN_PLAYERS;
+  const canStart = isHost() && (isBlitz ? connected === 2 : connected >= LIMITS.MIN_PLAYERS);
 
   const roster = el(
     'div',
@@ -49,8 +53,7 @@ export function renderLobby(): HTMLElement {
     ),
   );
 
-  const mode = room.settings.mode ?? 'CLASSIC';
-  const modeBtn = (m: 'CLASSIC' | 'IMPOSTOR', label: string) =>
+  const modeBtn = (m: GameMode, label: string) =>
     el(
       'button',
       {
@@ -63,20 +66,36 @@ export function renderLobby(): HTMLElement {
     );
   const modeRow = el(
     'div',
-    { class: 'row spread' },
+    { class: 'stack', style: { gap: '8px' } },
     el('span', { class: 'label' }, t('gameMode')),
-    el('div', { class: 'row', style: { gap: '8px' } }, modeBtn('CLASSIC', t('modeClassic')), modeBtn('IMPOSTOR', t('modeImpostor'))),
+    el(
+      'div',
+      { class: 'row wrap', style: { gap: '8px' } },
+      modeBtn('CLASSIC', t('modeClassic')),
+      modeBtn('IMPOSTOR', t('modeImpostor')),
+      modeBtn('BLITZ', t('modeBlitz')),
+    ),
   );
+
+  const modeHint =
+    mode === 'IMPOSTOR'
+      ? t('impostorLobbyHint')
+      : isBlitz
+        ? connected > 2
+          ? t('blitzTooMany')
+          : t('blitzLobbyHint')
+        : null;
 
   const settings = el(
     'div',
     { class: 'panel stack' },
     el('span', { class: 'label' }, t('settings')),
     modeRow,
-    mode === 'IMPOSTOR' ? el('div', { class: 'hint', style: { marginTop: '-4px' } }, t('impostorLobbyHint')) : null,
+    modeHint ? el('div', { class: 'hint', style: { marginTop: '-4px' } }, modeHint) : null,
     stepper(t('rounds'), room.settings.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, (v) => actions.updateSettings({ rounds: v })),
-    stepper(t('buildSecs'), room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
-    stepper(t('voteSecs'), room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
+    // BLITZ uses fixed fast timers, so its build/vote steppers are hidden.
+    isBlitz ? null : stepper(t('buildSecs'), room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
+    isBlitz ? null : stepper(t('voteSecs'), room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
     isHost() ? null : el('div', { class: 'hint' }, t('hostOnlySettings')),
   );
 
@@ -87,10 +106,10 @@ export function renderLobby(): HTMLElement {
         el(
           'button',
           { class: 'btn lime block', type: 'button', disabled: !canStart, onClick: () => actions.startGame() },
-          canStart ? t('startMatch') : t('needMore', { n: LIMITS.MIN_PLAYERS - connected }),
+          canStart ? t('startMatch') : isBlitz ? t('needExactly2') : t('needMore', { n: minP - connected }),
         ),
-        connected < LIMITS.MIN_PLAYERS
-          ? el('div', { class: 'hint center' }, t('minPlayers', { n: connected, m: LIMITS.MIN_PLAYERS }))
+        connected !== minP && connected < minP
+          ? el('div', { class: 'hint center' }, t('minPlayers', { n: connected, m: minP }))
           : null,
       )
     : el('div', { class: 'hint center' }, t('waitingHostStart'));
@@ -116,7 +135,7 @@ export function renderLobby(): HTMLElement {
     el(
       'div',
       { class: 'panel stack' },
-      el('div', { class: 'row spread' }, el('span', { class: 'label' }, t('players')), el('span', { class: 'count-pill' }, `${connected}/${LIMITS.MAX_PLAYERS}`)),
+      el('div', { class: 'row spread' }, el('span', { class: 'label' }, t('players')), el('span', { class: 'count-pill' }, `${connected}/${maxP}`)),
       roster,
     ),
 

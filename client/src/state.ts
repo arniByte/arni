@@ -5,9 +5,22 @@ import type {
   RoundVotePayload,
   RoundResultPayload,
   MatchEndPayload,
+  BlitzRoundPayload,
+  BlitzGuessPayload,
+  BlitzRoundResultPayload,
+  BlitzMatchEndPayload,
 } from '../../shared/protocol';
 
-export type Screen = 'HOME' | 'LOBBY' | 'BUILD' | 'VOTE' | 'RESULT' | 'RECAP';
+export type Screen =
+  | 'HOME'
+  | 'LOBBY'
+  | 'BUILD'
+  | 'VOTE'
+  | 'RESULT'
+  | 'RECAP'
+  | 'BLITZ_BUILD'
+  | 'BLITZ_GUESS'
+  | 'BLITZ_RESULT';
 
 export interface AppState {
   screen: Screen;
@@ -22,6 +35,13 @@ export interface AppState {
   vote: RoundVotePayload | null;
   result: RoundResultPayload | null;
   matchEnd: MatchEndPayload | null;
+
+  // BLITZ (2-player duel)
+  blitzRound: BlitzRoundPayload | null;
+  blitzGuess: BlitzGuessPayload | null;
+  blitzResult: BlitzRoundResultPayload | null;
+  blitzEnd: BlitzMatchEndPayload | null;
+  myBlitzAnswer: number | null;
 
   // per-round local bookkeeping
   mySubmitted: boolean;
@@ -43,6 +63,11 @@ export const state: AppState = {
   vote: null,
   result: null,
   matchEnd: null,
+  blitzRound: null,
+  blitzGuess: null,
+  blitzResult: null,
+  blitzEnd: null,
+  myBlitzAnswer: null,
   mySubmitted: false,
   mySubmittedGlyphs: null,
   myFaceId: null,

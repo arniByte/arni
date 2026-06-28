@@ -16,6 +16,10 @@ export const TIMERS = {
   BUILD: 45,
   VOTE: 25,
   RESULT: 8,
+  // BLITZ (2-player duel) — fast, fixed timers.
+  BLITZ_RACE: 14, // race to build a face
+  BLITZ_GUESS: 9, // guess the opponent's situation
+  BLITZ_RESULT: 4, // snappy reveal
 } as const;
 
 export const LIMITS = {
@@ -33,6 +37,13 @@ export const SCORE = {
   PER_VOTE: 100,
   PERFECT_READ_BONUS: 150, // added on top of the per-vote total → 250 when unanimous
   IMPOSTOR_EVADE: 250, // jackpot for an impostor whose face was NOT the top-accused
+  // BLITZ
+  BLITZ_READ: 100, // you guessed the opponent's situation
+  BLITZ_EXPR: 60, // the opponent guessed YOUR situation (your face was legible)
+  BLITZ_SPEED: 40, // you submitted faster
+  BLITZ_SYNC: 30, // both read each other right (shared bonus)
+  BLITZ_COMBO_STEP: 0.25, // +25% per read-streak, capped
+  BLITZ_COMBO_CAP: 4,
 } as const;
 
 // Placeholder face given to players who don't submit in time.
@@ -42,10 +53,18 @@ export const PLACEHOLDER_FACE = '( ¬_¬ )';
 export type Lang = 'ru' | 'en';
 
 // ── Game mode (room-level) ───────────────────────────────────────────────────
-export type GameMode = 'CLASSIC' | 'IMPOSTOR';
+export type GameMode = 'CLASSIC' | 'IMPOSTOR' | 'BLITZ';
 
 // ── Phases ───────────────────────────────────────────────────────────────────
-export type Phase = 'LOBBY' | 'BUILD' | 'VOTE' | 'RESULT' | 'END';
+export type Phase =
+  | 'LOBBY'
+  | 'BUILD'
+  | 'VOTE'
+  | 'RESULT'
+  | 'BLITZ_BUILD'
+  | 'BLITZ_GUESS'
+  | 'BLITZ_RESULT'
+  | 'END';
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 export interface Settings {
@@ -149,6 +168,79 @@ export interface MatchEndPayload {
   winner: ScoreRow | null;
   scoreboard: ScoreRow[];
   recap: RecapPayload;
+  rounds: RoundResultPayload[]; // full per-round breakdown for the "top moments" review
+}
+
+// ── BLITZ (2-player duel) payloads ───────────────────────────────────────────
+export interface BlitzRoundPayload {
+  index: number; // 1-based
+  total: number;
+  situation: string; // YOUR situation (private — opponent never sees it)
+  endsAt: number;
+  oppHandle: string;
+  roundWins: { me: number; opp: number };
+  streak: { me: number; opp: number };
+}
+
+export interface BlitzChoice {
+  token: number; // stable index into the choices array (client sends this, never raw text)
+  text: string;
+}
+
+export interface BlitzGuessPayload {
+  opponentFace: string; // the opponent's built face
+  oppHandle: string;
+  choices: BlitzChoice[]; // the two real situations, shuffled
+  endsAt: number;
+  lockedToken?: number; // set only on reconnect when this player already answered
+}
+
+export interface BlitzPoints {
+  read: number;
+  expr: number;
+  speed: number;
+  sync: number;
+  combo: number; // the multiplier applied (e.g. 1.5)
+  total: number;
+}
+
+export interface BlitzFaceReveal {
+  id: string; // playerId
+  handle: string;
+  glyphs: string;
+  situation: string; // their true situation
+}
+
+export interface BlitzGuessInfo {
+  guessed: string | null; // the situation text they picked
+  correct: boolean;
+}
+
+export interface BlitzRoundResultPayload {
+  index: number;
+  total: number;
+  faces: BlitzFaceReveal[]; // both players
+  points: Record<string, BlitzPoints>; // by playerId
+  guesses: Record<string, BlitzGuessInfo>; // by playerId
+  roundWinner: string | null; // playerId, or null on a draw
+  roundWins: Record<string, number>;
+  scores: Record<string, number>;
+  streaks: Record<string, number>;
+  syncBonus: boolean;
+}
+
+export interface BlitzMatchEndPayload {
+  players: { id: string; handle: string }[];
+  winner: string | null; // playerId, or null on a draw
+  roundWins: Record<string, number>;
+  scores: Record<string, number>;
+  longestStreak: Record<string, number>;
+  readAccuracy: Record<string, number>; // 0..100
+  fastestMs: Record<string, number>; // fastest single build per player (ms); 0 if none
+  syncPct: number; // 0..100 — how often the pair read each other right
+  worstRead: { situation: string; glyphs: string; guessedAs: string; handle: string } | null;
+  recap: RecapPayload;
+  forfeit: boolean;
 }
 
 export interface ErrorPayload {
@@ -166,6 +258,7 @@ export const ERR = {
   BAD_FACE: 'BAD_FACE',
   IN_PROGRESS: 'IN_PROGRESS',
   BAD_HANDLE: 'BAD_HANDLE',
+  NEED_2_PLAYERS: 'NEED_2_PLAYERS',
 } as const;
 
 // ── Acks (request/response callbacks) ────────────────────────────────────────
@@ -186,6 +279,7 @@ export interface ClientToServerEvents {
   'game:start': () => void;
   'face:submit': (p: { glyphs: string }) => void;
   'vote:cast': (p: { faceId: string }) => void;
+  'blitz:answer': (p: { token: number }) => void;
   'recap:request': (ack: (r: RecapPayload | null) => void) => void;
 }
 
@@ -200,6 +294,11 @@ export interface ServerToClientEvents {
   'face:mine': (p: { glyphs: string }) => void;
   'round:result': (p: RoundResultPayload) => void;
   'match:end': (p: MatchEndPayload) => void;
+  // BLITZ — private round (your situation) / private guess (opponent's face) / public result + end.
+  'blitz:round': (p: BlitzRoundPayload) => void;
+  'blitz:guess': (p: BlitzGuessPayload) => void;
+  'blitz:result': (p: BlitzRoundResultPayload) => void;
+  'blitz:end': (p: BlitzMatchEndPayload) => void;
   'player:joined': (p: { player: PublicPlayer }) => void;
   'player:left': (p: { playerId: string }) => void;
 }

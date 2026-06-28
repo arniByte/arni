@@ -11,6 +11,8 @@ import {
   type RoomStatePayload,
   type RoundResultPayload,
   type MatchEndPayload,
+  type BlitzRoundResultPayload,
+  type BlitzMatchEndPayload,
   ERR,
 } from '../../shared/protocol';
 import { sanitizeHandle } from './validate';
@@ -45,6 +47,45 @@ export interface RecapRound {
   votes: number;
 }
 
+// BLITZ (2-player duel) per-match state.
+export interface BlitzState {
+  promptKey: Map<string, 'A' | 'B'>; // playerId -> which situation they got
+  text: { A: string; B: string };
+  choiceKey: ('A' | 'B')[]; // shuffled order: token index -> situation key
+  guess: Map<string, 'A' | 'B'>; // playerId -> guessed key
+  roundWins: Map<string, number>;
+  streak: Map<string, number>;
+  longestStreak: Map<string, number>;
+  fastestMs: Map<string, number>;
+  readHits: Map<string, number>;
+  readCount: Map<string, number>;
+  syncRounds: number;
+  roundsPlayed: number;
+  buildStart: number; // when the current race started (for fastest-build stats)
+  worstRead: { situation: string; glyphs: string; guessedAs: string; handle: string } | null;
+  lastResult?: BlitzRoundResultPayload;
+  lastEnd?: BlitzMatchEndPayload;
+}
+
+export function newBlitzState(): BlitzState {
+  return {
+    promptKey: new Map(),
+    text: { A: '', B: '' },
+    choiceKey: [],
+    guess: new Map(),
+    roundWins: new Map(),
+    streak: new Map(),
+    longestStreak: new Map(),
+    fastestMs: new Map(),
+    readHits: new Map(),
+    readCount: new Map(),
+    syncRounds: 0,
+    roundsPlayed: 0,
+    buildStart: 0,
+    worstRead: null,
+  };
+}
+
 export interface Room {
   code: string;
   hostId: string;
@@ -66,6 +107,8 @@ export interface Room {
   phaseTimer?: ReturnType<typeof setTimeout>;
 
   recapRounds: RecapRound[];
+  roundHistory: RoundResultPayload[]; // full per-round results for the match review
+  blitz: BlitzState; // BLITZ mode state
   // Last emitted payloads, kept so a reconnecting player can resync mid-phase.
   lastResult?: RoundResultPayload;
   lastMatchEnd?: MatchEndPayload;
@@ -107,8 +150,16 @@ export function clampSettings(patch: Partial<Settings> | undefined, base: Settin
     rounds: clamp(patch?.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, base.rounds),
     buildSecs: clamp(patch?.buildSecs, 10, 120, base.buildSecs),
     voteSecs: clamp(patch?.voteSecs, 8, 90, base.voteSecs),
-    mode: patch?.mode === 'IMPOSTOR' || patch?.mode === 'CLASSIC' ? patch.mode : base.mode,
+    mode:
+      patch?.mode === 'IMPOSTOR' || patch?.mode === 'CLASSIC' || patch?.mode === 'BLITZ'
+        ? patch.mode
+        : base.mode,
   };
+}
+
+/** Max players for a room — BLITZ is a strict 2-player duel. */
+export function maxPlayers(room: Room): number {
+  return room.settings.mode === 'BLITZ' ? 2 : LIMITS.MAX_PLAYERS;
 }
 
 let joinCounter = 0;
@@ -150,6 +201,8 @@ export function createRoom(
     votes: new Map(),
     endsAt: 0,
     recapRounds: [],
+    roundHistory: [],
+    blitz: newBlitzState(),
     createdAt: Date.now(),
   };
   rooms.set(room.code, room);
@@ -190,7 +243,7 @@ export function addPlayer(
 
   // New player.
   if (room.phase !== 'LOBBY') return { ok: false, code: ERR.IN_PROGRESS };
-  if (room.players.size >= LIMITS.MAX_PLAYERS) return { ok: false, code: ERR.ROOM_FULL };
+  if (room.players.size >= maxPlayers(room)) return { ok: false, code: ERR.ROOM_FULL };
 
   const handle = sanitizeHandle(rawHandle) || 'PLAYER';
   const taken = [...room.players.values()].some(
