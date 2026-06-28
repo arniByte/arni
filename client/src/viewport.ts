@@ -31,13 +31,14 @@ function applyTelegramInsets(): void {
   if (!wa) return;
   const safe = wa.safeAreaInset || {};
   const content = wa.contentSafeAreaInset || {};
-  // device notch/home-bar PLUS Telegram's own chrome (header in fullscreen).
+  // device notch/home-bar PLUS Telegram's own chrome (floating controls / header).
   const top = (safe.top || 0) + (content.top || 0);
   const bottom = (safe.bottom || 0) + (content.bottom || 0);
   const root = document.documentElement.style;
-  // Only override the env() fallback when Telegram actually reports an inset.
-  if (top > 0) root.setProperty('--safe-top', `${top}px`);
-  if (bottom > 0) root.setProperty('--safe-bottom', `${bottom}px`);
+  // Inside Telegram, trust its reported insets verbatim (even 0) — they are more
+  // accurate for its webview than the CSS env() fallback, which can over-report.
+  root.setProperty('--safe-top', `${top}px`);
+  root.setProperty('--safe-bottom', `${bottom}px`);
 }
 
 let tgInited = false;

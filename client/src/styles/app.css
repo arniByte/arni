@@ -56,7 +56,7 @@
   color: var(--dim);
 }
 .topmeta .code {
-  color: var(--cyan);
+  color: var(--accent-text);
   letter-spacing: 0.22em;
   font-weight: 700;
 }
@@ -87,7 +87,7 @@
   color: var(--dim);
 }
 .cyan {
-  color: var(--cyan);
+  color: var(--accent-text);
 }
 .center {
   text-align: center;
@@ -120,7 +120,7 @@
     background: var(--surface2);
   }
   .modal-overlay {
-    background: rgba(12, 9, 26, 0.7);
+    background: rgba(24, 14, 20, 0.7);
   }
 }
 .panel.flush {
@@ -382,7 +382,7 @@
   letter-spacing: 0.06em;
 }
 .prow.me .pname {
-  color: var(--cyan);
+  color: var(--accent-text);
 }
 .prow.off {
   opacity: 0.45;
@@ -401,7 +401,7 @@
   border-color: rgba(215, 242, 90, 0.4);
 }
 .tag.you {
-  color: var(--cyan);
+  color: var(--accent-text);
   border-color: var(--tick-color);
 }
 .tag.perfect {
@@ -481,7 +481,7 @@
   right: 8px;
   font-size: 9px;
   letter-spacing: 0.16em;
-  color: var(--cyan);
+  color: var(--accent-text);
 }
 
 /* ── misc ───────────────────────────────────────────────────────────────────── */
@@ -595,7 +595,7 @@
   white-space: nowrap;
   transition: opacity 0.16s ease;
   letter-spacing: 0.04em;
-  text-shadow: 0 10px 50px rgba(139, 92, 246, 0.45), 0 2px 16px rgba(139, 92, 246, 0.3);
+  text-shadow: 0 10px 50px rgba(203, 99, 134, 0.45), 0 2px 16px rgba(203, 99, 134, 0.3);
 }
 
 /* decorative background scatter of ASCII faces (menu) */
@@ -622,7 +622,10 @@
 .screen.home {
   position: relative;
 }
-.screen.home > *:not(.bg-faces) {
+/* lift content above the fixed bg-faces — but NOT the topbar: it stays
+   position:sticky (its own stacking context already clears the faces), so its
+   `top` offset acts as a scroll threshold instead of shoving the bar downward. */
+.screen.home > *:not(.bg-faces):not(.topbar) {
   position: relative;
   z-index: 1;
 }
@@ -693,7 +696,7 @@
   display: grid;
   place-items: center;
   padding: calc(16px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
-  background: rgba(12, 9, 26, 0.45);
+  background: rgba(24, 14, 20, 0.45);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   animation: fade-in 0.18s ease both;
@@ -726,7 +729,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  color: var(--cyan);
+  color: var(--accent-text);
   letter-spacing: 0.04em;
 }
 .rule-body {
