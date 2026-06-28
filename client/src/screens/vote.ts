@@ -53,7 +53,7 @@ export function renderVote(): HTMLElement {
     grid,
     el(
       'div',
-      { class: 'hint center' },
+      { class: 'cue center headline-foot' },
       state.myVotedFaceId ? t('voteLockedChange') : isImp ? t('votePickImpostor') : t('votePick'),
     ),
   );

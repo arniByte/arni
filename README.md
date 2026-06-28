@@ -177,7 +177,8 @@ The client is deliberately "no framework" but heavily designed. Everything below
 - **i18n** (`i18n.ts`) — flat RU/EN dictionaries + `t(key, params)` with Russian plural rules; **Russian is the default**, English is a toggle.
 - **Telegram Mini App** — `viewport.ts` reads the WebApp safe-area + content-safe-area insets and exposes them as `--safe-top`/`--safe-bottom` so the floating top bar clears Telegram's fullscreen header and stays tappable; `env(safe-area-inset-*)` is the non-Telegram fallback.
 - **Rules modal** — a "how to play" overlay (help icon) explaining the flow + both modes, in RU/EN.
-- **Accessibility** — keyboard focus rings (`:focus-visible`), `prefers-reduced-motion` disables the animations, and accent/secondary text colors are tuned to clear WCAG AA contrast.
+- **Readable result/recap rows** — kaomoji shown in compact list rows (result "the rest", recap card preview) render on a single line via `.face-cell` (`white-space:nowrap; overflow:hidden`) so wide faces never wrap into mush; long situations truncate with an ellipsis. The vote instruction is a prominent bottom `.cue`; the IMPOSTOR reveal uses a bold accent label + a **filled** verdict pill (`.verdict.caught`/`.evaded`) instead of tiny low-contrast tags; the recap "leave" is a clearly-bordered `.btn.outline`.
+- **Accessibility** — keyboard focus rings (`:focus-visible`), `prefers-reduced-motion` disables the animations (incl. press/hover transforms), and accent/secondary text colors are tuned to clear WCAG AA contrast.
 
 ---
 

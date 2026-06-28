@@ -181,6 +181,20 @@
   padding: 8px 12px;
   font-size: 11px;
 }
+/* a clearly-visible bordered button on an opaque surface (e.g. the recap
+   "leave" action, which was nearly invisible as a bare ghost button). */
+.btn.outline {
+  background: var(--surface);
+  border-width: 1.5px;
+  border-color: var(--hairline);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: var(--glass-shadow);
+}
+.btn.outline:hover:not(:disabled) {
+  border-color: var(--acc-red);
+  color: var(--acc-red);
+}
 
 .chip {
   display: inline-flex;
@@ -281,6 +295,20 @@
   min-height: 0;
   padding: 0;
   font-size: clamp(22px, 7vw, 34px);
+}
+
+/* compact inline face for list rows (result "the rest", recap rows): always one
+   line — no break-word mush — clipping the rare extra-wide kaomoji at the edges. */
+.face-cell {
+  flex: none;
+  width: clamp(76px, 26vw, 118px);
+  font-family: var(--mono);
+  font-size: clamp(15px, 4.6vw, 19px);
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--ink);
 }
 
 /* ── slot builder ───────────────────────────────────────────────────────────── */
@@ -409,8 +437,40 @@
   border-color: var(--tick-color);
 }
 .tag.perfect {
-  color: var(--lime);
+  background: var(--lime);
+  color: #1a1c10;
   border-color: var(--lime);
+  font-weight: 700;
+}
+
+/* impostor-reveal verdict — a bold, FILLED pill (the old 9px lime-on-glass tag
+   was unreadable). caught = win for the room (lime); evaded = the impostor got
+   away (accent). */
+.verdict {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.verdict.caught {
+  background: var(--lime);
+  color: #1a1c10;
+}
+.verdict.evaded {
+  background: var(--cyan);
+  color: var(--on-accent);
+}
+/* prominent, readable label for the impostor reveal header */
+.reveal-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent-text);
 }
 .rank {
   width: 22px;
@@ -524,6 +584,16 @@
 .hint {
   font-size: 12px;
   color: var(--dim);
+}
+/* prominent instruction line (e.g. the vote cue) — bigger + readable, meant to
+   fill the bottom space like the menu headline. */
+.cue {
+  font-size: clamp(15px, 4.4vw, 18px);
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0.82;
+  letter-spacing: 0.01em;
+  padding: 0 6px;
 }
 .divider {
   height: 1px;
@@ -659,10 +729,6 @@
 .btn.active {
   border-color: var(--cyan);
   color: var(--cyan);
-}
-.tag.impostor {
-  color: var(--lime);
-  border-color: var(--lime);
 }
 .impostor-banner {
   border: 1px solid var(--lime);
