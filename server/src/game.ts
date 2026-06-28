@@ -30,6 +30,9 @@ export type IO = Server<ClientToServerEvents, ServerToClientEvents>;
 
 const PUBLIC_URL = process.env.PUBLIC_URL || '';
 
+// BLITZ: how many situations a player chooses from (1 real opponent prompt + decoys).
+const BLITZ_CHOICES = 4;
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 function now(): number {
   return Date.now();
@@ -407,8 +410,8 @@ function beginBlitzRound(io: IO, room: Room): void {
 
   const b = room.blitz;
   b.promptKey.clear();
-  b.guess.clear();
-  b.choiceKey = [];
+  b.choices.clear();
+  b.answer.clear();
 
   const A = pickSituation(room);
   let B = pickSituation(room);
@@ -424,7 +427,7 @@ function beginBlitzRound(io: IO, room: Room): void {
   if (order[1]) b.promptKey.set(order[1].id, 'B');
 
   room.phase = 'BLITZ_BUILD';
-  room.endsAt = now() + TIMERS.BLITZ_RACE * 1000;
+  room.endsAt = now() + room.settings.buildSecs * 1000; // host-configurable race time
   b.buildStart = now();
 
   broadcastState(io, room);
@@ -442,7 +445,28 @@ function beginBlitzRound(io: IO, room: Room): void {
       streak: { me: b.streak.get(p.id) ?? 0, opp: opp ? b.streak.get(opp.id) ?? 0 : 0 },
     });
   }
-  room.phaseTimer = setTimeout(() => beginBlitzGuess(io, room), TIMERS.BLITZ_RACE * 1000);
+  room.phaseTimer = setTimeout(() => beginBlitzGuess(io, room), room.settings.buildSecs * 1000);
+}
+
+/** The situation text for a player's assigned key this round. */
+function blitzSituationOf(room: Room, playerId: string): string {
+  const key = room.blitz.promptKey.get(playerId);
+  return key === 'A' ? room.blitz.text.A : key === 'B' ? room.blitz.text.B : '';
+}
+
+/**
+ * Build a player's guess options: the OPPONENT's real situation plus
+ * BLITZ_CHOICES-1 random decoys, shuffled. The player's OWN situation is never
+ * an option (so they can't just pick "the one that isn't mine").
+ */
+function blitzChoicesFor(room: Room, ownSituation: string, oppSituation: string): { text: string; correct: boolean }[] {
+  const exclude = new Set([ownSituation, oppSituation]);
+  const pool = SITUATIONS.map((s) => (room.lang === 'en' ? s.en : s.ru)).filter((txt) => !exclude.has(txt));
+  const decoys = shuffle(pool).slice(0, BLITZ_CHOICES - 1);
+  return shuffle([
+    { text: oppSituation, correct: true },
+    ...decoys.map((text) => ({ text, correct: false })),
+  ]);
 }
 
 function beginBlitzGuess(io: IO, room: Room): void {
@@ -468,25 +492,27 @@ function beginBlitzGuess(io: IO, room: Room): void {
   }
 
   room.phase = 'BLITZ_GUESS';
-  room.endsAt = now() + TIMERS.BLITZ_GUESS * 1000;
-  b.guess.clear();
-  b.choiceKey = shuffle<'A' | 'B'>(['A', 'B']);
-  const choices = b.choiceKey.map((key, token) => ({ token, text: key === 'A' ? b.text.A : b.text.B }));
+  room.endsAt = now() + room.settings.voteSecs * 1000; // host-configurable guess time
+  b.choices.clear();
+  b.answer.clear();
 
   broadcastState(io, room);
   const players = [...room.players.values()].filter((p) => p.connected);
   for (const p of players) {
-    if (!p.socketId) continue;
     const opp = players.find((q) => q.id !== p.id);
+    // Each player guesses the OPPONENT's situation from their own decoy set.
+    const choices = blitzChoicesFor(room, blitzSituationOf(room, p.id), opp ? blitzSituationOf(room, opp.id) : '');
+    b.choices.set(p.id, choices);
+    if (!p.socketId) continue;
     const oppSub = opp ? blitzSub(room, opp.id) : undefined;
     io.to(p.socketId).emit('blitz:guess', {
       opponentFace: oppSub ? oppSub.glyphs : PLACEHOLDER_FACE,
       oppHandle: opp ? opp.handle : '—',
-      choices,
+      choices: choices.map((c, token) => ({ token, text: c.text })),
       endsAt: room.endsAt,
     });
   }
-  room.phaseTimer = setTimeout(() => finishBlitzRound(io, room), TIMERS.BLITZ_GUESS * 1000);
+  room.phaseTimer = setTimeout(() => finishBlitzRound(io, room), room.settings.voteSecs * 1000);
 }
 
 /** A blitz guess. Returns an error code or null on success. First answer locks. */
@@ -495,14 +521,13 @@ export function handleBlitzAnswer(io: IO, room: Room, playerId: string, token: n
   if (now() > room.endsAt) return 'TOO_LATE';
   if (!room.players.has(playerId)) return 'NOT_IN_ROOM';
   const b = room.blitz;
-  if (b.guess.has(playerId)) return 'ALREADY';
-  if (token !== 0 && token !== 1) return 'BAD_TOKEN';
-  const key = b.choiceKey[token];
-  if (!key) return 'BAD_TOKEN';
-  b.guess.set(playerId, key);
+  if (b.answer.has(playerId)) return 'ALREADY';
+  const ch = b.choices.get(playerId);
+  if (!ch || !Number.isInteger(token) || token < 0 || token >= ch.length) return 'BAD_TOKEN';
+  b.answer.set(playerId, token);
 
   const connected = [...room.players.values()].filter((p) => p.connected);
-  if (connected.length >= 2 && connected.every((p) => b.guess.has(p.id))) {
+  if (connected.length >= 2 && connected.every((p) => b.answer.has(p.id))) {
     finishBlitzRound(io, room);
   }
   return null;
@@ -537,14 +562,17 @@ function finishBlitzRound(io: IO, room: Room): void {
     speedWinner = real[0].id;
   }
 
-  // READ correctness per player (did you guess the opponent's real situation?).
+  // READ correctness per player (did you pick the opponent's real situation?).
   const correct: Record<string, boolean> = {};
+  const guessedText: Record<string, string | null> = {};
   for (const id of ids) {
     const oppId = ids.find((q) => q !== id);
-    const oppKey = oppId ? b.promptKey.get(oppId) : undefined;
     const oppSub = oppId ? blitzSub(room, oppId) : undefined;
-    const guessed = b.guess.get(id);
-    correct[id] = !!guessed && guessed === oppKey && !!oppSub && !oppSub.auto;
+    const ch = b.choices.get(id);
+    const ai = b.answer.get(id);
+    const picked = ch && ai != null ? ch[ai] : undefined;
+    correct[id] = !!picked && picked.correct && !!oppSub && !oppSub.auto;
+    guessedText[id] = picked ? picked.text : null;
     b.readCount.set(id, (b.readCount.get(id) ?? 0) + 1);
     if (correct[id]) b.readHits.set(id, (b.readHits.get(id) ?? 0) + 1);
   }
@@ -578,20 +606,15 @@ function finishBlitzRound(io: IO, room: Room): void {
       if (prev === 0 || buildMs < prev) b.fastestMs.set(id, buildMs);
     }
 
-    const gk = b.guess.get(id);
-    guesses[id] = {
-      guessed: gk ? (gk === 'A' ? b.text.A : b.text.B) : null,
-      correct: correct[id],
-    };
+    guesses[id] = { guessed: guessedText[id], correct: correct[id] };
 
     // The most recent misread becomes the shareable "caught of the match".
     if (!correct[id] && oppId) {
       const oppSub2 = blitzSub(room, oppId);
-      const oppKey = b.promptKey.get(oppId);
       b.worstRead = {
-        situation: oppKey === 'A' ? b.text.A : b.text.B,
+        situation: blitzSituationOf(room, oppId),
         glyphs: oppSub2 ? oppSub2.glyphs : PLACEHOLDER_FACE,
-        guessedAs: gk ? (gk === 'A' ? b.text.A : b.text.B) : '—',
+        guessedAs: guessedText[id] ?? '—',
         handle: room.players.get(oppId)?.handle ?? '—',
       };
     }
@@ -816,16 +839,15 @@ export function snapshotTo(io: IO, room: Room, socketId: string): void {
         const b = room.blitz;
         const opp = [...room.players.values()].find((p) => p.id !== me.id);
         const oppSub = opp ? blitzSub(room, opp.id) : undefined;
-        const choices = b.choiceKey.map((key, token) => ({ token, text: key === 'A' ? b.text.A : b.text.B }));
+        const ch = b.choices.get(me.id) ?? [];
         // restore an already-locked guess so a reconnect keeps the UI locked
-        const lockedKey = b.guess.get(me.id);
-        const lockedToken = lockedKey ? b.choiceKey.indexOf(lockedKey) : -1;
+        const locked = b.answer.has(me.id) ? b.answer.get(me.id)! : -1;
         to.emit('blitz:guess', {
           opponentFace: oppSub?.glyphs ?? PLACEHOLDER_FACE,
           oppHandle: opp?.handle ?? '—',
-          choices,
+          choices: ch.map((c, token) => ({ token, text: c.text })),
           endsAt: room.endsAt,
-          lockedToken: lockedToken >= 0 ? lockedToken : undefined,
+          lockedToken: locked >= 0 ? locked : undefined,
         });
       }
       break;

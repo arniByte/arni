@@ -36,6 +36,8 @@ const RU: Record<string, string> = {
   impostorLobbyHint: 'импостор: лучше 4–5 игроков',
   blitzLobbyHint: 'блиц: дуэль ровно на 2 игроков',
   blitzTooMany: 'в блице ровно 2 игрока — уберите лишних',
+  blitzRaceSecs: 'СЕК. НА ЛИЦО',
+  blitzGuessSecs: 'СЕК. НА УГАДЫВАНИЕ',
   needExactly2: 'нужно ровно 2 игрока',
   // BLITZ duel
   blitzYourSituation: 'ТВОЯ СИТУАЦИЯ',
@@ -182,6 +184,8 @@ const EN: Record<string, string> = {
   impostorLobbyHint: 'impostor: best with 4–5 players',
   blitzLobbyHint: 'blitz: a duel for exactly 2 players',
   blitzTooMany: 'blitz is exactly 2 — remove the extra players',
+  blitzRaceSecs: 'SECS TO BUILD',
+  blitzGuessSecs: 'SECS TO GUESS',
   needExactly2: 'need exactly 2 players',
   // BLITZ duel
   blitzYourSituation: 'YOUR SITUATION',

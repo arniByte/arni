@@ -16,9 +16,8 @@ export const TIMERS = {
   BUILD: 45,
   VOTE: 25,
   RESULT: 8,
-  // BLITZ (2-player duel) — fast, fixed timers.
-  BLITZ_RACE: 14, // race to build a face
-  BLITZ_GUESS: 9, // guess the opponent's situation
+  // BLITZ — the race + guess windows are host-configurable (buildSecs/voteSecs);
+  // only the reveal is fixed.
   BLITZ_RESULT: 4, // snappy reveal
 } as const;
 

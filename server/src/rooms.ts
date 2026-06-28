@@ -47,12 +47,21 @@ export interface RecapRound {
   votes: number;
 }
 
+// One guess option shown to a player: the situation text + whether it's the
+// opponent's real one. The client only ever sees {token, text} (not `correct`).
+export interface BlitzChoiceOption {
+  text: string;
+  correct: boolean;
+}
+
 // BLITZ (2-player duel) per-match state.
 export interface BlitzState {
   promptKey: Map<string, 'A' | 'B'>; // playerId -> which situation they got
   text: { A: string; B: string };
-  choiceKey: ('A' | 'B')[]; // shuffled order: token index -> situation key
-  guess: Map<string, 'A' | 'B'>; // playerId -> guessed key
+  // Per-player guess options: the opponent's real situation + decoys, shuffled.
+  // Each player gets their OWN set (their own situation is never an option).
+  choices: Map<string, BlitzChoiceOption[]>;
+  answer: Map<string, number>; // playerId -> chosen option index (first locks)
   roundWins: Map<string, number>;
   streak: Map<string, number>;
   longestStreak: Map<string, number>;
@@ -71,8 +80,8 @@ export function newBlitzState(): BlitzState {
   return {
     promptKey: new Map(),
     text: { A: '', B: '' },
-    choiceKey: [],
-    guess: new Map(),
+    choices: new Map(),
+    answer: new Map(),
     roundWins: new Map(),
     streak: new Map(),
     longestStreak: new Map(),
@@ -148,7 +157,7 @@ export function clampSettings(patch: Partial<Settings> | undefined, base: Settin
     typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : dflt;
   return {
     rounds: clamp(patch?.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, base.rounds),
-    buildSecs: clamp(patch?.buildSecs, 10, 120, base.buildSecs),
+    buildSecs: clamp(patch?.buildSecs, 8, 120, base.buildSecs),
     voteSecs: clamp(patch?.voteSecs, 8, 90, base.voteSecs),
     mode:
       patch?.mode === 'IMPOSTOR' || patch?.mode === 'CLASSIC' || patch?.mode === 'BLITZ'
