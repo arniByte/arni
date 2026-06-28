@@ -8,7 +8,6 @@ import { createFaceBuilder } from '../components/faceBuilder';
 import { actions } from '../net';
 import { state, isHost } from '../state';
 import { t } from '../i18n';
-import { TIMERS } from '../../../shared/protocol';
 
 /** VS header: round, the running round-win scoreline, and 🔥 streaks. */
 function vsHeader(
@@ -55,7 +54,7 @@ export function renderBlitzBuild(): HTMLElement {
   const b = state.blitzRound;
   const room = state.room!;
   const header = b
-    ? vsHeader(b.index, b.total, b.roundWins, b.streak, b.oppHandle, b.endsAt, TIMERS.BLITZ_RACE)
+    ? vsHeader(b.index, b.total, b.roundWins, b.streak, b.oppHandle, b.endsAt, room.settings.buildSecs)
     : el('div', { class: 'panel' }, '…');
 
   const situation = el(
@@ -101,7 +100,7 @@ export function renderBlitzGuess(): HTMLElement {
       el('span', { class: 'label' }, t('blitzGuessTitle')),
       g ? countdown(g.endsAt) : null,
     ),
-    g ? timerbar(g.endsAt, TIMERS.BLITZ_GUESS) : null,
+    g ? timerbar(g.endsAt, room.settings.voteSecs) : null,
   );
 
   const oppFace = el(

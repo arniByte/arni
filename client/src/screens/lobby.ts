@@ -93,9 +93,9 @@ export function renderLobby(): HTMLElement {
     modeRow,
     modeHint ? el('div', { class: 'hint', style: { marginTop: '-4px' } }, modeHint) : null,
     stepper(t('rounds'), room.settings.rounds, LIMITS.MIN_ROUNDS, LIMITS.MAX_ROUNDS, (v) => actions.updateSettings({ rounds: v })),
-    // BLITZ uses fixed fast timers, so its build/vote steppers are hidden.
-    isBlitz ? null : stepper(t('buildSecs'), room.settings.buildSecs, 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
-    isBlitz ? null : stepper(t('voteSecs'), room.settings.voteSecs, 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
+    // In BLITZ these are the race (build) + guess windows; both are host-adjustable.
+    stepper(isBlitz ? t('blitzRaceSecs') : t('buildSecs'), room.settings.buildSecs, isBlitz ? 8 : 15, 90, (v) => actions.updateSettings({ buildSecs: v })),
+    stepper(isBlitz ? t('blitzGuessSecs') : t('voteSecs'), room.settings.voteSecs, isBlitz ? 8 : 10, 60, (v) => actions.updateSettings({ voteSecs: v })),
     isHost() ? null : el('div', { class: 'hint' }, t('hostOnlySettings')),
   );
 
