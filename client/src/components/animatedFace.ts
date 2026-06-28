@@ -3,23 +3,25 @@
 import { el } from '../dom';
 
 // Curated, symbol-only faces (decorative — not submitted, so no validation).
+// Clean, single-code-point faces only — no combining diacritics (which render
+// "crooked" on some devices). Each renders reliably in a monospace font.
 const FACES = [
   '◕‿◕',
-  '͡° ͜ʖ ͡°',
   '◑‿◐',
   '•‿•',
-  '˘ ³˘',
   '◠‿◠',
   '¬‿¬',
   '⊙﹏⊙',
-  'ᗒ‿ᗕ',
-  '◔̯◔',
   '・‿・',
   '≧◡≦',
-  '✜‿✜',
   'ʘ‿ʘ',
   '♥‿♥',
   '◉‿◉',
+  '◔◡◔',
+  '◔‿◔',
+  '•◡•',
+  '╹◡╹',
+  '°□°',
 ];
 
 const SWAP_MS = 1100; // quick changes (no pulse)
