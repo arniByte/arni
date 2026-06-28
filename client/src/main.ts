@@ -6,8 +6,10 @@ import { startRender } from './render';
 import { tickClocks } from './components/ui';
 import { applyThemeFromStorage } from './i18n';
 import { initTelegram, initScrollParallax } from './viewport';
+import { initSound } from './sound';
 
 applyThemeFromStorage();
+initSound();
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app not found');

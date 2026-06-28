@@ -7,7 +7,10 @@ A realtime, no-words online party game. You get a **situation**, you build a **f
 *One sentence: you get a situation, you build a face, everyone votes for the best one.*
 
 - No accounts, no database. Join with a 4-character room code (Jackbox / skribbl model).
-- Mobile-first, cold monospace "terminal" aesthetic.
+- **Two game modes:** CLASSIC (everyone gets the same situation) and IMPOSTOR (one player secretly gets a *different* situation — find them).
+- Mobile-first, **glassmorphism** UI with a vivid **neon magenta-pink** accent; light (default) + dark themes.
+- **Russian default, English toggle.** Telegram Mini App-aware (safe-area handling).
+- **Synthesized, file-free sound** (Web Audio): adaptive taps, phase cues, countdown ticks, soft ambient — all muteable.
 - One Node process serves the built client **and** the Socket.io endpoint.
 
 ---
@@ -102,15 +105,19 @@ server/
   src/validate.ts      # face/handle validation — the server re-checks everything
   src/situations.ts    # 165 situation prompts
 client/
-  index.html
-  src/main.ts          # mount + global countdown clock
-  src/net.ts           # socket client, actions, server-event -> state, auto-resume on reconnect
-  src/state.ts         # tiny state store + pub/sub
-  src/render.ts        # view-key-gated render loop (won't clobber interactive screens) + toast
-  src/components/      # faceBuilder (the mechanic), palettes, kaomoji preview, shared UI/chrome
-  src/screens/         # home / lobby / build / vote / result / recap
+  index.html            # fonts (Space Mono + JetBrains Mono + Unbounded + Noto Sans JP), Telegram SDK, favicon
+  src/main.ts           # mount + global countdown clock + sound/Telegram/parallax init
+  src/net.ts            # socket client, actions, server-event -> state, auto-resume on reconnect
+  src/state.ts          # tiny state store + pub/sub
+  src/render.ts         # view-key-gated render loop (won't clobber interactive screens) + toast + phase sound
+  src/i18n.ts           # RU/EN dictionaries + t(), pluralization, theme get/set
+  src/sound.ts          # Web Audio sound engine (taps, phase cues, ticks, ambient pad) — no audio files
+  src/viewport.ts       # Telegram safe-area insets + scroll parallax for the background faces
+  src/components/       # faceBuilder (the mechanic), palettes, kaomoji preview, ui chrome,
+                        #   icons (inline SVG), rulesModal, animatedFace, bgFaces
+  src/screens/          # home / lobby / build / vote / result / recap
   src/recap/recapCard.ts  # html2canvas + qrcode -> shareable PNG
-  src/styles/          # tokens.css (design tokens) + app.css (components)
+  src/styles/           # tokens.css (design tokens, themes, grid, aurora) + app.css (components)
 ```
 
 No UI framework — the client is vanilla TypeScript with a ~30-line hyperscript helper (`dom.ts`) and a small pub/sub store. Bundled with Vite. The server runs directly from TypeScript via `tsx` (the only build step is the Vite client build).
@@ -129,7 +136,10 @@ Clients render `endsAt` countdowns locally but **never** advance phases. The ser
 ### Game rules
 
 - **Phases:** `LOBBY → (BUILD 45s → VOTE 25s → RESULT 8s) × rounds → END`
-- **Players:** 3–12 (min 3 so no-self-vote works). **Rounds:** 3–8 (default 5). Timers are host-configurable in the lobby.
+- **Players:** 3–12 (min 3 so no-self-vote works). **Rounds:** 3–8 (default 5). Timers + mode are host-configurable in the lobby.
+- **Modes:**
+  - **CLASSIC** — everyone gets the **same** situation; build the face that reads it best, collect votes.
+  - **IMPOSTOR** — one player secretly gets a **different** situation. Everyone builds faces, then hunts the one that doesn't fit. The room scores for catching the impostor; the impostor scores (`IMPOSTOR_EVADE`) for slipping by. Best with 4–5 players.
 - **Scoring:** each vote = **+100** to the face's author. A **perfect read** (every voter — ≥2 of them — converges on one single face) adds a bonus and is tagged `PERFECT READ`.
 - **Winner:** top cumulative score; ties broken by best single-round vote count, then earliest to join.
 
@@ -154,8 +164,25 @@ At match end the client renders a hidden, exactly-styled **1600×900** node and 
 
 ---
 
+## Look & feel (client experience)
+
+The client is deliberately "no framework" but heavily designed. Everything below is driven by CSS custom properties + small vanilla modules, so it stays tiny (~29 KB gzip main bundle; `html2canvas` is lazy-loaded only for the recap export).
+
+- **Themes** — light (default) + dark, toggled in the menu and persisted (`kao.theme`); applied before first paint to avoid a flash. All colors are tokens in `tokens.css`; `[data-theme="dark"]` overrides them.
+- **Accent** — a vivid **neon magenta-pink** (`--cyan` token name is legacy): `#fb1fa0` light / `#ff58c0` dark for fills/buttons/mascot, with a deeper `--accent-text` (`#bd1379` light) for small text so it clears WCAG AA.
+- **Glassmorphism** — panels, top bar, vote cards, modal and icon buttons are frosted glass: a `backdrop-filter` blur/saturate over a gradient + a radial **specular sheen**, an inset bright **edge**, and a faint accent **refraction** glow. Behind the glass, soft **aurora** color blobs drift so there's real color to frost.
+- **Pinned grid + parallax** — the lattice is a `position:fixed` layer (`html::before`), so the floating background kaomoji (`bgFaces`) and content **slide over a stationary grid** as you scroll; the faces also drift continuously and parallax on scroll (`viewport.ts`).
+- **Fonts** — **Space Mono** (Latin) + **JetBrains Mono** (Cyrillic body) for the mono UI, paired with **Unbounded** for the big display headlines (full Cyrillic).
+- **Sound** (`sound.ts`) — a synthesized, file-free Web Audio engine: **adaptive taps** (each press walks a pentatonic scale), **phase cues** (a motif per `BUILD/VOTE/RESULT/RECAP`), **countdown ticks** in the final seconds, and a quiet **ambient pad**. The `AudioContext` is created/resumed only on the first user gesture (autoplay-safe); a menu toggle mutes everything and persists (`kao.muted`).
+- **i18n** (`i18n.ts`) — flat RU/EN dictionaries + `t(key, params)` with Russian plural rules; **Russian is the default**, English is a toggle.
+- **Telegram Mini App** — `viewport.ts` reads the WebApp safe-area + content-safe-area insets and exposes them as `--safe-top`/`--safe-bottom` so the floating top bar clears Telegram's fullscreen header and stays tappable; `env(safe-area-inset-*)` is the non-Telegram fallback.
+- **Rules modal** — a "how to play" overlay (help icon) explaining the flow + both modes, in RU/EN.
+- **Accessibility** — keyboard focus rings (`:focus-visible`), `prefers-reduced-motion` disables the animations, and accent/secondary text colors are tuned to clear WCAG AA contrast.
+
+---
+
 ## Tech
 
-Node + Express + Socket.io (server, authoritative, in-memory) · TypeScript + Vite (vanilla client) · `html2canvas` + `qrcode` (recap) · run with `tsx`. Identity is just `{ playerId (uuid in localStorage), handle }` — no auth.
+Node + Express + Socket.io (server, authoritative, in-memory) · TypeScript + Vite (vanilla client) · `html2canvas` + `qrcode` (recap, lazy-loaded) · Web Audio (sound) · run with `tsx`. Identity is just `{ playerId (uuid in localStorage), handle }` — no auth.
 
-To rebrand, change the single `BRAND` constant in `shared/protocol.ts`.
+To rebrand, change the single `BRAND` constant in `shared/protocol.ts`. To re-accent, change `--cyan`/`--accent-text` (+ aura/glass tokens) in `client/src/styles/tokens.css`.
