@@ -39,7 +39,7 @@ export function renderResult(): HTMLElement {
             'div',
             { class: 'prow' },
             el('span', { class: 'rank' }, String(i + 2)),
-            el('span', { class: 'face-preview small', style: { minHeight: '0', textAlign: 'left' } }, r.glyphs),
+            el('span', { class: 'face-preview small', style: { minHeight: '0', flex: 'none', width: '76px', textAlign: 'center' } }, r.glyphs),
             el('span', { class: 'pname dim' }, `@${r.handle}`),
             el('span', { class: 'pscore' }, `${r.votes}`),
           ),

@@ -1,10 +1,12 @@
 // HOME — create or join a room. No accounts: just a handle.
 import { el } from '../dom';
 import { topbar, controls } from '../components/ui';
-import { BRAND, LIMITS } from '../../../shared/protocol';
+import { LIMITS } from '../../../shared/protocol';
 import { actions, storedHandle } from '../net';
 import { setState, state } from '../state';
 import { t } from '../i18n';
+import { animatedMascot } from '../components/animatedFace';
+import { bgFaces } from '../components/bgFaces';
 
 // Drafts kept across re-renders so an error toast doesn't wipe what you typed.
 let draftHandle = '';
@@ -56,13 +58,14 @@ export function renderHome(): HTMLElement {
 
   return el(
     'main',
-    { class: 'screen' },
+    { class: 'screen home' },
+    bgFaces(),
     topbar(controls()),
 
     el(
       'div',
-      { class: 'stack center', style: { marginTop: '6vh', gap: '10px' } },
-      el('div', { class: 'face-preview', style: { minHeight: '0', color: 'var(--cyan)' } }, BRAND.mascot),
+      { class: 'stack center', style: { marginTop: '4vh', gap: '14px' } },
+      animatedMascot(),
       el('span', { class: 'chip lime', style: { alignSelf: 'center' } }, t('tagline')),
     ),
 

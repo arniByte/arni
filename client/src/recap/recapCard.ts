@@ -1,7 +1,8 @@
 // Viral recap card: render a hidden, exactly-styled 1600x900 node and export a PNG.
 // Client-side via html2canvas (MVP). Inline styles keep the export independent of app CSS.
-import html2canvas from 'html2canvas';
-import QRCode from 'qrcode';
+// NOTE: html2canvas (~140KB) and qrcode are imported DYNAMICALLY inside the
+// functions below, so they're code-split into a separate chunk that loads only
+// when a player exports the recap card at match end — not in the initial bundle.
 import { el } from '../dom';
 import { BRAND, LIMITS, type RecapPayload } from '../../../shared/protocol';
 import { t, votesWord, getTheme } from '../i18n';
@@ -12,11 +13,11 @@ const THEMES = {
     surface: '#10131C',
     ink: '#EAEAE7',
     dim: '#737580',
-    cyan: '#7FE9E0',
-    steel: '#8FB7C9',
+    cyan: '#A8A4FF',
+    steel: '#9C9AE0',
     lime: '#D7F25A',
-    grid: 'rgba(127,233,224,0.06)',
-    hair: 'rgba(127,233,224,0.16)',
+    grid: 'rgba(168,164,255,0.06)',
+    hair: 'rgba(168,164,255,0.16)',
     qrDark: '#EAEAE7',
     qrLight: '#0B0D14',
   },
@@ -25,11 +26,11 @@ const THEMES = {
     surface: '#FFFFFF',
     ink: '#1C2230',
     dim: '#6C7484',
-    cyan: '#0E9C94',
-    steel: '#3B7C95',
+    cyan: '#5B5BD6',
+    steel: '#6E72C7',
     lime: '#A9C400',
-    grid: 'rgba(28,46,72,0.05)',
-    hair: 'rgba(28,46,72,0.16)',
+    grid: 'rgba(91,91,214,0.05)',
+    hair: 'rgba(91,91,214,0.16)',
     qrDark: '#1C2230',
     qrLight: '#FFFFFF',
   },
@@ -48,6 +49,7 @@ export function absoluteJoinUrl(recap: RecapPayload): string {
 async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
   const C = THEMES[getTheme()];
   const joinUrl = absoluteJoinUrl(recap);
+  const QRCode = (await import('qrcode')).default;
   const qr = await QRCode.toDataURL(joinUrl, {
     margin: 1,
     width: 150,
@@ -105,7 +107,7 @@ async function buildCardNode(recap: RecapPayload): Promise<HTMLElement> {
         el(
           'div',
           { style: { width: '260px', textAlign: 'right' } },
-          el('div', { style: { color: C.cyan, fontSize: '22px' } }, `@${r.handle}`),
+          el('div', { style: { color: C.cyan, fontSize: '22px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `@${r.handle}`),
           el('div', { style: { color: C.dim, fontSize: '17px', marginTop: '4px' } }, `${r.votes} ${votesWord(r.votes)}`),
         ),
       ),
@@ -138,6 +140,7 @@ async function renderToCanvas(recap: RecapPayload): Promise<HTMLCanvasElement> {
   document.body.appendChild(stage);
   try {
     if (document.fonts?.ready) await document.fonts.ready;
+    const html2canvas = (await import('html2canvas')).default;
     return await html2canvas(card, { backgroundColor: THEMES[getTheme()].paper, width: 1600, height: 900, scale: 1 });
   } finally {
     stage.remove();

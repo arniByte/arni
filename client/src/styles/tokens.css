@@ -1,27 +1,27 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    KAO // 顔 — design tokens + base reset.
    Default = a soft, easy-on-the-eyes LIGHT theme. [data-theme="dark"] = the
-   original cold terminal look. Same calm monospace FUI in both.
+   original cold terminal look. Accent = indigo / violet.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root,
 :root[data-theme='light'] {
-  /* LIGHT (default) — soft near-white, slate ink, teal accent */
+  /* LIGHT (default) — soft near-white, slate ink, indigo accent */
   --paper: #f5f7fa; /* page bg (soft cool white, gentler than pure #fff) */
   --surface: #ffffff; /* cards / inputs */
   --surface2: #eef1f6; /* raised */
   --ink: #1c2230; /* primary text (slate, not harsh black) */
   --dim: #6c7484; /* secondary / labels */
-  --cyan: #0e9c94; /* primary accent (teal — readable on white) */
-  --steel: #3b7c95; /* secondary accent */
+  --cyan: #5b5bd6; /* primary accent (indigo) */
+  --steel: #6e72c7; /* secondary accent (periwinkle) */
   --lime: #d7f25a; /* HIGHLIGHT fill — dark text on it; use ~1 element/screen */
   --acc-red: #e23b30; /* danger / timer-critical only */
   --grid: rgba(28, 46, 72, 0.05); /* faint FUI grid */
   --hairline: rgba(28, 46, 72, 0.16);
   --hairline-dim: rgba(28, 40, 60, 0.09);
-  --on-accent: #ffffff; /* text on a solid teal button */
-  --accent-soft: rgba(14, 156, 148, 0.1); /* selected/picked surface */
-  --tick-color: rgba(14, 156, 148, 0.5); /* panel corner ticks */
+  --on-accent: #ffffff; /* text on a solid indigo button */
+  --accent-soft: rgba(91, 91, 214, 0.1); /* selected/picked surface */
+  --tick-color: rgba(91, 91, 214, 0.45); /* panel corner ticks */
 }
 
 :root[data-theme='dark'] {
@@ -30,16 +30,16 @@
   --surface2: #161a26;
   --ink: #eaeae7;
   --dim: #737580;
-  --cyan: #7fe9e0;
-  --steel: #8fb7c9;
+  --cyan: #a8a4ff; /* indigo, lifted for dark bg */
+  --steel: #9c9ae0;
   --lime: #d7f25a;
   --acc-red: #ff3b30;
-  --grid: rgba(127, 233, 224, 0.06);
-  --hairline: rgba(127, 233, 224, 0.14);
+  --grid: rgba(168, 164, 255, 0.06);
+  --hairline: rgba(168, 164, 255, 0.14);
   --hairline-dim: rgba(234, 234, 231, 0.08);
   --on-accent: #0b0d14;
-  --accent-soft: rgba(127, 233, 224, 0.08);
-  --tick-color: rgba(127, 233, 224, 0.45);
+  --accent-soft: rgba(168, 164, 255, 0.12);
+  --tick-color: rgba(168, 164, 255, 0.4);
 }
 
 :root {
