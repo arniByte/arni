@@ -66,6 +66,10 @@
   --r: 14px;
   --gap: 14px;
   --maxw: 720px;
+  /* safe-area insets (notch / Telegram fullscreen). JS may override --safe-top
+     with the Telegram WebApp content-safe-area inset; env() is the fallback. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {

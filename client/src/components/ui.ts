@@ -3,14 +3,24 @@ import { el } from '../dom';
 import { BRAND } from '../../../shared/protocol';
 import { t, getLang, setLang, getTheme, setTheme } from '../i18n';
 import { setState } from '../state';
+import { rulesButton } from './rulesModal';
+import { ICON } from './icons';
 
-/** Language + theme toggles (shown on the home screen before joining). */
+/** A round, frosted icon button carrying an inline SVG glyph. */
+export function iconButton(svg: string, title: string, onClick: () => void): HTMLButtonElement {
+  const btn = el('button', { class: 'icon-btn', type: 'button', title, 'aria-label': title, onClick });
+  btn.innerHTML = svg;
+  return btn;
+}
+
+/** Rules · language · theme toggles (shown on the home screen before joining). */
 export function controls(): HTMLElement {
   const lang = getLang();
   const theme = getTheme();
   return el(
     'div',
     { class: 'row', style: { gap: '8px' } },
+    rulesButton(),
     el(
       'button',
       {
@@ -24,19 +34,11 @@ export function controls(): HTMLElement {
       },
       lang === 'ru' ? 'EN' : 'RU',
     ),
-    el(
-      'button',
-      {
-        class: 'btn sm',
-        type: 'button',
-        title: 'Тема / Theme',
-        onClick: () => {
-          setTheme(theme === 'light' ? 'dark' : 'light');
-          setState({});
-        },
-      },
-      theme === 'light' ? '☾' : '☀',
-    ),
+    // Show the glyph of the theme you'd switch TO (moon while light, sun while dark).
+    iconButton(theme === 'light' ? ICON.moon : ICON.sun, 'Тема / Theme', () => {
+      setTheme(theme === 'light' ? 'dark' : 'light');
+      setState({});
+    }),
   );
 }
 
